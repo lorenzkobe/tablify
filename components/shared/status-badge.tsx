@@ -1,52 +1,67 @@
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import type { OrderStatus, OrderItemStatus, TableStatus, TabStatus } from '@/lib/database.types'
 
-const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> = {
-  pending:     { label: 'Pending',     className: 'bg-amber-500 text-white hover:bg-amber-500' },
-  in_progress: { label: 'In Progress', className: 'bg-orange-500 text-white hover:bg-orange-500' },
-  ready:       { label: 'Ready',       className: 'bg-green-500 text-white hover:bg-green-500' },
-  served:      { label: 'Served',      className: 'bg-slate-400 text-white hover:bg-slate-400' },
-  paid:        { label: 'Paid',        className: 'border-sky-500 text-sky-600 dark:text-sky-400' },
-  cancelled:   { label: 'Cancelled',   className: 'border-red-500 text-red-600 dark:text-red-400' },
+/**
+ * Ink & Signal status palette — soft tinted background + accent text, one
+ * source of truth. `dot` and `text` are exported for pages that render their
+ * own indicators (accent strips, status dots) instead of full badges.
+ */
+type Tone = { badge: string; dot: string; text: string }
+
+const AMBER: Tone   = { badge: 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400',     dot: 'bg-amber-500',   text: 'text-amber-700 dark:text-amber-400' }
+const ORANGE: Tone  = { badge: 'border-orange-500/20 bg-orange-500/10 text-orange-700 dark:text-orange-400',  dot: 'bg-orange-500',  text: 'text-orange-700 dark:text-orange-400' }
+const EMERALD: Tone = { badge: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' }
+const NEUTRAL: Tone = { badge: 'border-border bg-muted text-muted-foreground',                                dot: 'bg-muted-foreground', text: 'text-muted-foreground' }
+const CYAN: Tone    = { badge: 'border-primary/20 bg-primary/10 text-primary',                                dot: 'bg-primary',     text: 'text-primary' }
+const ROSE: Tone    = { badge: 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400',          dot: 'bg-rose-500',    text: 'text-rose-700 dark:text-rose-400' }
+
+export const ORDER_STATUS_TONE: Record<OrderStatus, Tone> = {
+  pending:     AMBER,
+  in_progress: ORANGE,
+  ready:       EMERALD,
+  served:      NEUTRAL,
+  paid:        CYAN,
+  cancelled:   ROSE,
 }
 
-const ITEM_STATUS_CONFIG: Record<OrderItemStatus, { label: string; className: string }> = {
-  ordered:     { label: 'Ordered',     className: 'bg-amber-500 text-white hover:bg-amber-500' },
-  in_progress: { label: 'In Progress', className: 'bg-orange-500 text-white hover:bg-orange-500' },
-  ready:       { label: 'Ready',       className: 'bg-green-500 text-white hover:bg-green-500' },
-  served:      { label: 'Served',      className: 'bg-slate-400 text-white hover:bg-slate-400' },
-  returned:    { label: 'Returned',    className: 'bg-red-500 text-white hover:bg-red-500' },
+const ORDER_LABEL: Record<OrderStatus, string> = {
+  pending: 'Pending', in_progress: 'In Progress', ready: 'Ready',
+  served: 'Served', paid: 'Paid', cancelled: 'Cancelled',
+}
+
+export const ITEM_STATUS_TONE: Record<OrderItemStatus, Tone> = {
+  ordered:     AMBER,
+  in_progress: ORANGE,
+  ready:       EMERALD,
+  served:      NEUTRAL,
+  returned:    ROSE,
+}
+
+const ITEM_LABEL: Record<OrderItemStatus, string> = {
+  ordered: 'Ordered', in_progress: 'In Progress', ready: 'Ready',
+  served: 'Served', returned: 'Returned',
 }
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
-  const config = ORDER_STATUS_CONFIG[status]
-  const isOutline = status === 'paid' || status === 'cancelled'
   return (
-    <Badge variant={isOutline ? 'outline' : 'default'} className={config.className}>
-      {config.label}
+    <Badge variant="outline" className={cn(ORDER_STATUS_TONE[status].badge)}>
+      {ORDER_LABEL[status]}
     </Badge>
   )
 }
 
 export function ItemStatusBadge({ status }: { status: OrderItemStatus }) {
-  const config = ITEM_STATUS_CONFIG[status]
   return (
-    <Badge variant="default" className={config.className}>
-      {config.label}
+    <Badge variant="outline" className={cn(ITEM_STATUS_TONE[status].badge)}>
+      {ITEM_LABEL[status]}
     </Badge>
   )
 }
 
 export function TableStatusBadge({ status }: { status: TableStatus }) {
   return (
-    <Badge
-      variant={status === 'available' ? 'outline' : 'default'}
-      className={
-        status === 'available'
-          ? 'border-green-500 text-green-600 dark:text-green-400'
-          : 'bg-amber-500 text-white hover:bg-amber-500'
-      }
-    >
+    <Badge variant="outline" className={cn(status === 'available' ? EMERALD.badge : AMBER.badge)}>
       {status === 'available' ? 'Available' : 'Occupied'}
     </Badge>
   )
@@ -54,14 +69,7 @@ export function TableStatusBadge({ status }: { status: TableStatus }) {
 
 export function TabStatusBadge({ status }: { status: TabStatus }) {
   return (
-    <Badge
-      variant={status === 'open' ? 'default' : 'outline'}
-      className={
-        status === 'open'
-          ? 'bg-sky-600 text-white hover:bg-sky-600'
-          : 'border-slate-400 text-muted-foreground'
-      }
-    >
+    <Badge variant="outline" className={cn(status === 'open' ? CYAN.badge : NEUTRAL.badge)}>
       {status === 'open' ? 'Open' : 'Closed'}
     </Badge>
   )

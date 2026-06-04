@@ -26,7 +26,7 @@ export default async function AdminUsersPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-sky-500/10 text-sky-500 flex items-center justify-center">
+        <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <Users size={17} />
         </div>
         <div>

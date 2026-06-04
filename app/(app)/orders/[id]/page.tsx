@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { ItemStatusBadge } from '@/components/shared/status-badge'
+import { ItemStatusBadge, ORDER_STATUS_TONE } from '@/components/shared/status-badge'
 import { formatCurrency, formatTime } from '@/lib/format'
 import { UpdateOrderStatusButton } from '@/components/orders/update-order-status-button'
 import { UpdateItemStatusButton } from '@/components/orders/update-item-status-button'
@@ -15,15 +15,6 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   served:      'Served',
   paid:        'Paid',
   cancelled:   'Cancelled',
-}
-
-const STATUS_COLOR: Record<OrderStatus, string> = {
-  pending:     'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30',
-  in_progress: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30',
-  ready:       'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30',
-  served:      'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/30',
-  paid:        'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/30',
-  cancelled:   'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30',
 }
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -63,7 +54,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-semibold">{location}</h1>
             {tabData && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-primary/20 bg-primary/10 text-primary">
                 TAB
               </span>
             )}
@@ -72,7 +63,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             {formatTime(order.created_at)} · by {(order.profiles as { full_name: string } | null)?.full_name ?? 'Unknown'}
           </p>
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${STATUS_COLOR[order.status]}`}>
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0 ${ORDER_STATUS_TONE[order.status].badge}`}>
           {STATUS_LABEL[order.status]}
         </span>
       </div>

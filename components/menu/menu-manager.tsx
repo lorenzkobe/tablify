@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, EyeOff, Eye } from 'lucide-react'
 import { formatCurrency } from '@/lib/format'
@@ -151,16 +151,16 @@ export function MenuManager({
                 <button
                   onClick={() => setActiveCategory(cat.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                    active ? 'bg-sky-600 text-white' : 'bg-muted text-foreground hover:bg-accent'
+                    active ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-accent'
                   }`}
                 >
                   {cat.name}
-                  <span className={`text-xs tabular-nums ${active ? 'text-sky-200' : 'text-muted-foreground'}`}>{count}</span>
+                  <span className={`text-xs tabular-nums ${active ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{count}</span>
                 </button>
                 <button onClick={() => openEditCat(cat)} className="p-1 rounded text-muted-foreground hover:text-foreground">
                   <Pencil size={11} />
                 </button>
-                <button onClick={() => handleDeleteCat(cat.id)} className="p-1 rounded text-muted-foreground hover:text-red-500">
+                <button onClick={() => handleDeleteCat(cat.id)} className="p-1 rounded text-muted-foreground hover:text-rose-500">
                   <Trash2 size={11} />
                 </button>
               </div>
@@ -192,13 +192,13 @@ export function MenuManager({
                 onClick={() => setActiveCategory(cat.id)}
                 className={`flex-1 flex items-center justify-between text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                   activeCategory === cat.id
-                    ? 'bg-sky-600 text-white font-medium'
+                    ? 'bg-primary text-primary-foreground font-medium'
                     : 'hover:bg-accent text-foreground'
                 }`}
               >
                 <span className="truncate">{cat.name}</span>
                 <span className={`text-xs tabular-nums shrink-0 ml-2 ${
-                  activeCategory === cat.id ? 'text-sky-200' : 'text-muted-foreground'
+                  activeCategory === cat.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
                 }`}>{count}</span>
               </button>
               <div className="hidden group-hover:flex gap-0.5 shrink-0">
@@ -210,7 +210,7 @@ export function MenuManager({
                 </button>
                 <button
                   onClick={() => handleDeleteCat(cat.id)}
-                  className="p-1.5 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-500"
+                  className="p-1.5 rounded hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500"
                 >
                   <Trash2 size={11} />
                 </button>
@@ -230,7 +230,7 @@ export function MenuManager({
           <p className="text-sm text-muted-foreground">
             {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
           </p>
-          <Button onClick={openNewItem} size="sm" className="gap-1.5 min-h-[36px] bg-sky-600 hover:bg-sky-700">
+          <Button onClick={openNewItem} size="sm" className="gap-1.5 min-h-[36px]">
             <Plus size={14} />
             Add Item
           </Button>
@@ -250,8 +250,8 @@ export function MenuManager({
                     {item.name}
                   </p>
                   {!item.available && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded">
-                      86'd
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                      86&apos;d
                     </span>
                   )}
                 </div>
@@ -268,7 +268,7 @@ export function MenuManager({
                   title={item.available ? "86 this item" : "Make available"}
                   className={`p-1.5 rounded-md transition-colors ${
                     item.available
-                      ? 'text-muted-foreground hover:bg-red-500/10 hover:text-red-500'
+                      ? 'text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500'
                       : 'text-emerald-500 hover:bg-emerald-500/10'
                   }`}
                 >
@@ -282,7 +282,7 @@ export function MenuManager({
                 </button>
                 <button
                   onClick={() => handleDeleteItem(item.id)}
-                  className="p-1.5 rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                  className="p-1.5 rounded-md text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -293,7 +293,7 @@ export function MenuManager({
           {filteredItems.length === 0 && (
             <div className="py-12 text-center">
               <p className="text-sm text-muted-foreground">No items in this category.</p>
-              <button onClick={openNewItem} className="mt-2 text-sm text-sky-500 hover:text-sky-400 transition-colors">
+              <button onClick={openNewItem} className="mt-2 text-sm text-primary hover:text-primary/80 transition-colors">
                 Add the first item
               </button>
             </div>
@@ -321,7 +321,7 @@ export function MenuManager({
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="outline" onClick={() => setCatDialogOpen(false)} className="flex-1">Cancel</Button>
-              <Button onClick={saveCat} disabled={!catName.trim() || catLoading} className="flex-1 bg-sky-600 hover:bg-sky-700">
+              <Button onClick={saveCat} disabled={!catName.trim() || catLoading} className="flex-1">
                 {catLoading ? 'Saving…' : 'Save'}
               </Button>
             </div>
@@ -391,7 +391,7 @@ export function MenuManager({
               <Button
                 onClick={saveItem}
                 disabled={!itemName.trim() || !itemPrice || !itemCategory || itemLoading}
-                className="flex-1 bg-sky-600 hover:bg-sky-700"
+                className="flex-1"
               >
                 {itemLoading ? 'Saving…' : 'Save'}
               </Button>

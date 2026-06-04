@@ -30,16 +30,16 @@ describe('formatDistanceToNow', () => {
 })
 
 describe('formatCurrency', () => {
-  it('formats whole dollar amounts', () => {
-    expect(formatCurrency(14)).toBe('$14.00')
+  it('formats whole peso amounts', () => {
+    expect(formatCurrency(14)).toBe('₱14.00')
   })
 
   it('formats decimal amounts', () => {
-    expect(formatCurrency(13.5)).toBe('$13.50')
+    expect(formatCurrency(13.5)).toBe('₱13.50')
   })
 
   it('formats zero', () => {
-    expect(formatCurrency(0)).toBe('$0.00')
+    expect(formatCurrency(0)).toBe('₱0.00')
   })
 })
 

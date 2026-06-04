@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { OrderStatusBadge } from '@/components/shared/status-badge'
+import { OrderStatusBadge, ORDER_STATUS_TONE } from '@/components/shared/status-badge'
+import { PageHeader } from '@/components/shared/page-header'
 import { Table2, Scroll, ClipboardList, Clock, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { formatDistanceToNow } from '@/lib/format'
@@ -29,30 +30,35 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-4xl space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Live overview of your venue</p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Live overview of your venue"
+        action={
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
+            <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-primary text-primary" />
+            Realtime
+          </span>
+        }
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
-        {/* Tables — sky accent */}
+        {/* Tables */}
         <Link href="/tables" className="group block h-full">
-          <div className="h-full rounded-xl border border-border bg-card p-5 hover:border-sky-400/40 hover:shadow-sm transition-all">
+          <div className="surface-raised h-full rounded-xl border border-border bg-card p-5 transition-transform group-hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-4">
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-sky-100 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400">
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-muted text-muted-foreground">
                 <Table2 size={17} />
               </span>
               <ArrowRight size={14} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
             </div>
-            <p className="text-4xl font-bold tracking-tight tabular-nums">
+            <p className="text-4xl font-semibold tracking-tight tabular-nums">
               {occupiedTables}
               <span className="text-xl font-normal text-muted-foreground ml-1">/ {totalTables}</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1 mb-3">Tables Occupied</p>
-            {/* Occupancy bar */}
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-sky-500 transition-all"
+                className="h-full rounded-full bg-primary transition-all"
                 style={{ width: `${occupancyPct}%` }}
               />
             </div>
@@ -60,32 +66,32 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        {/* Open Tabs — amber accent */}
+        {/* Open Tabs */}
         <Link href="/tabs" className="group block h-full">
-          <div className="h-full rounded-xl border border-border bg-card p-5 hover:border-amber-400/40 hover:shadow-sm transition-all">
+          <div className="surface-raised h-full rounded-xl border border-border bg-card p-5 transition-transform group-hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-4">
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-muted text-muted-foreground">
                 <Scroll size={17} />
               </span>
               <ArrowRight size={14} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
             </div>
-            <p className="text-4xl font-bold tracking-tight tabular-nums">{openTabs}</p>
+            <p className="text-4xl font-semibold tracking-tight tabular-nums">{openTabs}</p>
             <p className="text-xs text-muted-foreground mt-1 mb-3">Open Tabs</p>
             <div className="h-1.5 rounded-full bg-transparent" />
             <p className="text-[10px] text-transparent mt-1">–</p>
           </div>
         </Link>
 
-        {/* Active Orders — emerald accent */}
+        {/* Active Orders */}
         <Link href="/orders" className="group block h-full">
-          <div className="h-full rounded-xl border border-border bg-card p-5 hover:border-emerald-400/40 hover:shadow-sm transition-all">
+          <div className="surface-raised h-full rounded-xl border border-border bg-card p-5 transition-transform group-hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-4">
-              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-muted text-muted-foreground">
                 <ClipboardList size={17} />
               </span>
               <ArrowRight size={14} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
             </div>
-            <p className="text-4xl font-bold tracking-tight tabular-nums">{activeOrders}</p>
+            <p className="text-4xl font-semibold tracking-tight tabular-nums">{activeOrders}</p>
             <p className="text-xs text-muted-foreground mt-1 mb-3">Active Orders</p>
             <div className="h-1.5 rounded-full bg-transparent" />
             <p className="text-[10px] text-transparent mt-1">–</p>
@@ -117,7 +123,7 @@ export default async function DashboardPage() {
                 (order.venue_tables as { label: string } | null)?.label ??
                 (order.tabs as { name: string } | null)?.name ??
                 'Unknown'
-              const accentColor = statusAccent(order.status as OrderStatus)
+              const accentColor = ORDER_STATUS_TONE[order.status as OrderStatus].dot
               return (
                 <Link
                   key={order.id}
@@ -150,16 +156,4 @@ export default async function DashboardPage() {
       </div>
     </div>
   )
-}
-
-function statusAccent(status: OrderStatus): string {
-  switch (status) {
-    case 'pending':     return 'bg-amber-400'
-    case 'in_progress': return 'bg-orange-400'
-    case 'ready':       return 'bg-emerald-400'
-    case 'served':      return 'bg-slate-300'
-    case 'paid':        return 'bg-sky-400'
-    case 'cancelled':   return 'bg-red-400'
-    default:            return 'bg-border'
-  }
 }

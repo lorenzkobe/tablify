@@ -7,8 +7,8 @@ export function TablifyMark({ size = 24 }: { size?: number }) {
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none">
       <defs>
         <linearGradient id="tablify-mark-grad" x1="0" y1="0" x2={size} y2={size} gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#38BDF8" />
-          <stop offset="100%" stopColor="#0284C7" />
+          <stop offset="0%" stopColor="#22D3EE" />
+          <stop offset="100%" stopColor="#0891B2" />
         </linearGradient>
       </defs>
       <rect x={0} y={0} width={sq} height={sq} rx={r} fill="url(#tablify-mark-grad)" />

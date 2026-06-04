@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatTime } from '@/lib/format'
 import { NewOrderButton } from '@/components/orders/new-order-button'
 import { UpdateOrderStatusButton } from '@/components/orders/update-order-status-button'
-import { Badge } from '@/components/ui/badge'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Users } from 'lucide-react'
 import Link from 'next/link'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default async function TablesPage() {
   const supabase = await createClient()
@@ -15,30 +16,31 @@ export default async function TablesPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-end justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Floor View</h1>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-muted-foreground">{available} available</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-muted-foreground">{occupied} occupied</span>
-          </span>
-        </div>
-      </div>
+      <PageHeader
+        title="Floor View"
+        action={
+          <div className="flex items-center gap-3 text-sm">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-muted-foreground">{available} available</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-muted-foreground">{occupied} occupied</span>
+            </span>
+          </div>
+        }
+      />
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Total', value: total },
-          { label: 'Available', value: available, color: 'text-green-600 dark:text-green-400' },
+          { label: 'Available', value: available, color: 'text-emerald-600 dark:text-emerald-400' },
           { label: 'Occupied', value: occupied, color: 'text-amber-600 dark:text-amber-400' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl border bg-card px-4 py-3 text-center">
-            <p className={`text-2xl font-bold tabular-nums ${color ?? ''}`}>{value}</p>
+          <div key={label} className="surface-raised rounded-xl border border-border bg-card px-4 py-3 text-center">
+            <p className={`text-2xl font-semibold tabular-nums ${color ?? ''}`}>{value}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
           </div>
         ))}
@@ -55,18 +57,18 @@ export default async function TablesPage() {
               <Link key={table.id} href={`/tables/${table.id}`}>
                 <div
                   className={`
-                    relative rounded-xl border-2 p-4 min-h-[110px] flex flex-col justify-between
-                    cursor-pointer transition-all active:scale-95
+                    surface-raised relative rounded-xl border p-4 min-h-[110px] flex flex-col justify-between
+                    cursor-pointer transition-transform active:scale-95 hover:-translate-y-0.5
                     ${isOccupied
-                      ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50'
-                      : 'border-border bg-card hover:bg-accent/60'
+                      ? 'border-amber-500/30 bg-amber-500/10'
+                      : 'border-border bg-card'
                     }
                   `}
                 >
                   {/* Status dot */}
                   <div className="flex items-start justify-between">
                     <span
-                      className={`text-xl font-bold tracking-tight ${
+                      className={`text-xl font-semibold tracking-tight ${
                         isOccupied ? 'text-amber-700 dark:text-amber-300' : 'text-foreground'
                       }`}
                     >
@@ -74,7 +76,7 @@ export default async function TablesPage() {
                     </span>
                     <span
                       className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${
-                        isOccupied ? 'bg-amber-500' : 'bg-green-500'
+                        isOccupied ? 'bg-amber-500' : 'bg-emerald-500'
                       }`}
                     />
                   </div>
@@ -88,10 +90,10 @@ export default async function TablesPage() {
                       {table.capacity}
                     </span>
                     <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
                         isOccupied
-                          ? 'bg-amber-200 text-amber-800 dark:bg-amber-800/40 dark:text-amber-300'
-                          : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                          : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
                       }`}
                     >
                       {isOccupied ? 'Occupied' : 'Available'}

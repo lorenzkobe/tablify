@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { closeTab } from '@/app/actions/tabs'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { AlertTriangle, X } from 'lucide-react'
+import { formatCurrency } from '@/lib/format'
 import { toast } from 'sonner'
 
 export function CloseTabButton({ tabId, tabName, total }: { tabId: string; tabName: string; total?: number }) {
@@ -51,7 +52,7 @@ export function CloseTabButton({ tabId, tabName, total }: { tabId: string; tabNa
             </div>
             <DialogDescription className="text-sm text-muted-foreground mt-2 ml-12">
               {hasBalance
-                ? `Tab has an outstanding balance of $${total!.toFixed(2)}. Collect payment before closing.`
+                ? `Tab has an outstanding balance of ${formatCurrency(total!)}. Collect payment before closing.`
                 : 'This will mark the tab as closed. This cannot be undone.'}
             </DialogDescription>
           </div>

@@ -3,6 +3,7 @@ import { NewTabDialog } from '@/components/tabs/new-tab-dialog'
 import { Clock, User } from 'lucide-react'
 import { formatDistanceToNow } from '@/lib/format'
 import Link from 'next/link'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default async function TabsPage() {
   const supabase = await createClient()
@@ -17,18 +18,15 @@ export default async function TabsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex items-end justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Tabs</h1>
-        <NewTabDialog />
-      </div>
+      <PageHeader title="Tabs" action={<NewTabDialog />} />
 
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Open', value: openTabs.length, color: 'text-sky-600 dark:text-sky-400' },
+          { label: 'Open', value: openTabs.length, color: 'text-primary' },
           { label: 'Closed', value: closedTabs.length, color: '' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl border bg-card px-4 py-3 text-center">
-            <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
+          <div key={label} className="surface-raised rounded-xl border border-border bg-card px-4 py-3 text-center">
+            <p className={`text-2xl font-semibold tabular-nums ${color}`}>{value}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
           </div>
         ))}
@@ -46,15 +44,15 @@ export default async function TabsPage() {
 
               return (
                 <Link key={tab.id} href={`/tabs/${tab.id}`}>
-                  <div className="relative rounded-xl border-2 border-sky-400/50 bg-sky-50/50 dark:bg-sky-950/20 p-4 min-h-[100px] flex flex-col justify-between cursor-pointer transition-all active:scale-95 hover:bg-sky-50 dark:hover:bg-sky-950/40">
+                  <div className="surface-raised relative rounded-xl border border-primary/30 bg-primary/10 p-4 min-h-[100px] flex flex-col justify-between cursor-pointer transition-transform active:scale-95 hover:-translate-y-0.5">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-sky-800 dark:text-sky-200 text-lg leading-tight">{tab.name}</p>
-                      <span className="w-2.5 h-2.5 rounded-full bg-sky-500 shrink-0 mt-1.5" />
+                      <p className="font-semibold text-primary text-lg leading-tight">{tab.name}</p>
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-1.5" />
                     </div>
                     <div className="flex items-center justify-between mt-3">
                       <div className="space-y-0.5">
                         {openerName && (
-                          <p className="text-xs text-sky-600/70 dark:text-sky-400/70 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <User size={10} />
                             {openerName}
                           </p>
@@ -65,7 +63,7 @@ export default async function TabsPage() {
                         </p>
                       </div>
                       {activeOrders > 0 && (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-sky-200 text-sky-800 dark:bg-sky-800/40 dark:text-sky-300">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary">
                           {activeOrders} {activeOrders === 1 ? 'order' : 'orders'}
                         </span>
                       )}

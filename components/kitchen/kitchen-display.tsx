@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { updateOrderItemStatus } from '@/app/actions/orders'
-import { formatTime, formatDistanceToNow } from '@/lib/format'
+import { formatTime } from '@/lib/format'
 import { toast } from 'sonner'
 import { ChefHat, Clock, CheckCheck, Flame } from 'lucide-react'
 import type { OrderItemStatus } from '@/lib/database.types'
@@ -49,7 +49,7 @@ function TicketAgeIndicator({ createdAt }: { createdAt: string }) {
   return (
     <span
       className={`flex items-center gap-1 text-xs font-medium tabular-nums ${
-        urgent ? 'text-red-400' : warning ? 'text-amber-400' : 'text-muted-foreground'
+        urgent ? 'text-rose-400' : warning ? 'text-amber-400' : 'text-muted-foreground'
       }`}
     >
       <Clock size={11} />
@@ -133,7 +133,7 @@ export function KitchenDisplay({ initialItems }: { initialItems: KitchenItem[] }
           : 'bg-amber-500/10'
 
         return (
-          <div key={orderId} className={`flex flex-col rounded-xl border-2 ${borderColor} bg-card overflow-hidden`}>
+          <div key={orderId} className={`surface-raised flex flex-col rounded-xl border-2 ${borderColor} bg-card overflow-hidden`}>
             {/* Ticket header */}
             <div className={`${headerBg} px-4 py-3 flex items-start justify-between gap-2`}>
               <div>
@@ -186,7 +186,7 @@ export function KitchenDisplay({ initialItems }: { initialItems: KitchenItem[] }
                         disabled={isLoading}
                         className={`w-full rounded-lg py-2.5 text-sm font-semibold transition-colors min-h-[44px] flex items-center justify-center gap-2 disabled:opacity-50 ${
                           isInProgress
-                            ? 'bg-green-500 hover:bg-green-400 text-white'
+                            ? 'bg-emerald-500 hover:bg-emerald-400 text-white'
                             : 'bg-amber-500 hover:bg-amber-400 text-white'
                         }`}
                       >

@@ -6,16 +6,16 @@ import { inviteUser, updateUserRole, deleteUser } from '@/app/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Plus, Trash2, ShieldCheck, Utensils, ChefHat } from 'lucide-react'
 import type { Profile, Role } from '@/lib/database.types'
 
 const ROLE_CONFIG: Record<Role, { label: string; description: string; color: string; icon: React.ReactNode }> = {
-  admin:   { label: 'Admin',   description: 'Full access',         color: 'text-sky-500 bg-sky-500/10', icon: <ShieldCheck size={13} /> },
-  server:  { label: 'Server',  description: 'Take & manage orders', color: 'text-blue-500 bg-blue-500/10',    icon: <Utensils size={13} /> },
-  kitchen: { label: 'Kitchen', description: 'View & fulfill orders', color: 'text-orange-500 bg-orange-500/10', icon: <ChefHat size={13} /> },
+  admin:   { label: 'Admin',   description: 'Full access',         color: 'text-primary bg-primary/10',         icon: <ShieldCheck size={13} /> },
+  server:  { label: 'Server',  description: 'Take & manage orders', color: 'text-indigo-500 bg-indigo-500/10',   icon: <Utensils size={13} /> },
+  kitchen: { label: 'Kitchen', description: 'View & fulfill orders', color: 'text-orange-500 bg-orange-500/10',   icon: <ChefHat size={13} /> },
 }
 
 function Initials({ name }: { name: string }) {
@@ -81,7 +81,7 @@ export function UserManager({ users, currentUserId }: { users: Profile[]; curren
       <div className="flex justify-end">
         <Button
           onClick={() => setInviteOpen(true)}
-          className="gap-2 min-h-[40px] bg-sky-600 hover:bg-sky-700"
+          className="gap-2 min-h-[40px]"
         >
           <Plus size={15} />
           Invite Staff
@@ -129,7 +129,7 @@ export function UserManager({ users, currentUserId }: { users: Profile[]; curren
                 {!isCurrentUser && (
                   <button
                     onClick={() => handleDelete(user.id, user.full_name)}
-                    className="p-2 rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                    className="p-2 rounded-md text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -144,7 +144,7 @@ export function UserManager({ users, currentUserId }: { users: Profile[]; curren
             <p className="text-sm text-muted-foreground">No staff yet.</p>
             <button
               onClick={() => setInviteOpen(true)}
-              className="mt-2 text-sm text-sky-500 hover:text-sky-400 transition-colors"
+              className="mt-2 text-sm text-primary hover:text-primary/80 transition-colors"
             >
               Invite your first team member
             </button>
@@ -199,7 +199,7 @@ export function UserManager({ users, currentUserId }: { users: Profile[]; curren
               <Button
                 onClick={handleInvite}
                 disabled={!email.trim() || !fullName.trim() || loading}
-                className="flex-1 bg-sky-600 hover:bg-sky-700"
+                className="flex-1"
               >
                 {loading ? 'Sending…' : 'Send Invite'}
               </Button>

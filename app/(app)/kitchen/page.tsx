@@ -34,7 +34,8 @@ export default async function KitchenPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Active order queue</p>
           </div>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium">
+        <span className="flex items-center gap-2 text-xs text-emerald-500 font-medium">
+          <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
           <Wifi size={12} />
           Live
         </span>

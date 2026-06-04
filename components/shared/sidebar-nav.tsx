@@ -12,7 +12,8 @@ import {
   Users,
   LogOut,
 } from 'lucide-react'
-import { TablifyMark, TablifyWordmark } from '@/components/shared/logo'
+import { TablifyWordmark } from '@/components/shared/logo'
+import { ThemeToggle } from '@/components/shared/theme-toggle'
 import { logout } from '@/app/actions/auth'
 import type { Role } from '@/lib/database.types'
 import { cn } from '@/lib/utils'
@@ -47,9 +48,9 @@ export function AppNav({ role }: { role: Role }) {
                 key={href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors min-h-[38px]',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors min-h-[38px]',
                   active
-                    ? 'bg-foreground text-background'
+                    ? 'bg-primary/10 text-primary ring-1 ring-inset ring-primary/20'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
@@ -60,31 +61,35 @@ export function AppNav({ role }: { role: Role }) {
           })}
         </nav>
 
-        <div className="pt-3 border-t border-border">
-          <form action={logout}>
+        <div className="pt-3 border-t border-border flex items-center gap-1">
+          <form action={logout} className="flex-1">
             <button
               type="submit"
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent min-h-[38px]"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent min-h-[38px]"
             >
               <LogOut size={15} />
               Sign out
             </button>
           </form>
+          <ThemeToggle className="w-9 h-9 shrink-0" />
         </div>
       </aside>
 
       {/* ── Mobile top bar ──────────────────────────────────────── */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4 bg-sidebar border-b border-border">
         <TablifyWordmark />
-        <form action={logout}>
-          <button
-            type="submit"
-            className="flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            aria-label="Sign out"
-          >
-            <LogOut size={16} />
-          </button>
-        </form>
+        <div className="flex items-center gap-1">
+          <ThemeToggle className="w-9 h-9" />
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
+          </form>
+        </div>
       </header>
 
       {/* ── Mobile bottom nav ───────────────────────────────────── */}
@@ -98,7 +103,7 @@ export function AppNav({ role }: { role: Role }) {
               className={cn(
                 'flex flex-1 flex-col items-center justify-center gap-1 py-2 rounded-md transition-colors min-h-[44px]',
                 active
-                  ? 'text-foreground'
+                  ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >

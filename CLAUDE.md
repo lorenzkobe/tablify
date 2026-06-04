@@ -88,11 +88,21 @@ supabase/migrations/
 - **server** — take orders, update order status, manage tabs
 - **kitchen** — view order_items, update item status
 
-## Branding
-- **Colors:** Teal primary (`#14B8A6` light, teal-500 dark), Slate backgrounds
+## Branding — "Ink & Signal"
+
+The app uses the **Ink & Signal** design language: true-neutral ink surfaces with a single Electric Cyan signal accent. All colors are token-driven (OKLCH) in `app/globals.css` — never hardcode color values (e.g. `sky-*`, `teal-*`, `$`) in components; reference the semantic tokens instead.
+
+- **Signal accent:** Electric Cyan (`primary` token) — used for active nav, focus rings, the live indicator, and the logo gradient. This is the single brand accent; do not introduce competing accent hues.
+- **Surfaces:** True-neutral OKLCH palette. Use `.surface-raised` (inner highlight + soft shadow, no glow) for elevation/hierarchy rather than relying on color.
 - **Font:** Geist / Geist Mono (Vercel's font)
-- **Dark mode first** (kitchen/bar are dim environments)
-- **Status colors:** pending=amber, in_progress=orange, ready=green, served=slate, paid=teal, cancelled/returned=red
+- **Dark mode first** (kitchen/bar are dim environments). Light/dark theme toggle is pre-hydration (no flash); see `components/shared/theme-toggle.tsx`.
+- **Status palette:** Centralized token maps `ORDER_STATUS_TONE` / `ITEM_STATUS_TONE` in `components/shared/status-badge.tsx`. Tones: pending=amber, in_progress=orange, ready=emerald, served=neutral, paid=cyan, cancelled/returned=rose. Statuses render with the soft-tint pattern (10% bg / 20–30% border / full-opacity text).
+- **Shared layout:** Use the `PageHeader` component (`components/shared/page-header.tsx`) for consistent page titles.
+
+### Updating styling or branding
+- All color, surface, and depth tokens live in `app/globals.css`. To retune the palette, edit the token values there — every component inherits automatically.
+- Use the `currentColor` CSS pattern for per-instance coloring (e.g. the live-dot can glow emerald for kitchen, cyan for dashboard) instead of duplicating CSS.
+- After any styling change, run `npm run lint` and `npm run type-check`, and visually inspect in **both** light and dark themes.
 
 ## Development Workflow
 
