@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { MenuManager } from '@/components/menu/menu-manager'
-import { UtensilsCrossed } from 'lucide-react'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default async function MenuPage() {
   const supabase = await createClient()
@@ -23,22 +23,28 @@ export default async function MenuPage() {
 
   const totalItems = itemsRes.data?.length ?? 0
   const availableItems = itemsRes.data?.filter((i) => i.available).length ?? 0
+  const unavailableItems = totalItems - availableItems
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <UtensilsCrossed size={17} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none">Menu</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {availableItems} of {totalItems} item{totalItems !== 1 ? 's' : ''} available
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Menu"
+        description={
+          <span className="inline-flex items-center gap-3">
+            <span>
+              <span className="font-medium text-foreground tabular-nums">{availableItems}</span>
+              {' '}of{' '}
+              <span className="tabular-nums">{totalItems}</span>{' '}
+              item{totalItems !== 1 ? 's' : ''} available
+            </span>
+            {unavailableItems > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                {unavailableItems} unavailable
+              </span>
+            )}
+          </span>
+        }
+      />
 
       <MenuManager
         categories={categoriesRes.data ?? []}

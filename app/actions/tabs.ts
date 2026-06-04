@@ -24,6 +24,19 @@ export async function createTab(name: string) {
 
 export async function closeTab(tabId: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Closing a bill is a cash action — admins only.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'admin') {
+    return { error: 'Only an admin can close a bill' }
+  }
 
   const { error } = await supabase
     .from('tabs')

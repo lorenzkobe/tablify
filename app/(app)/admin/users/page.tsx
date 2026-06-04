@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { UserManager } from '@/components/admin/user-manager'
-import { Users } from 'lucide-react'
 
 export default async function AdminUsersPage() {
   const supabase = await createClient()
@@ -24,17 +23,12 @@ export default async function AdminUsersPage() {
   const count = profiles?.length ?? 0
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-          <Users size={17} />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold tracking-tight leading-none">Staff</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {count} team member{count !== 1 ? 's' : ''}
-          </p>
-        </div>
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
+      <div className="space-y-0.5">
+        <h1 className="text-2xl font-semibold tracking-tight">Staff</h1>
+        <p className="text-sm text-muted-foreground">
+          {count} team member{count !== 1 ? 's' : ''}
+        </p>
       </div>
 
       <UserManager users={profiles ?? []} currentUserId={user.id} />

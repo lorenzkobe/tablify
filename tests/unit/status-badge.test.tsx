@@ -1,25 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import {
-  OrderStatusBadge,
-  ItemStatusBadge,
-  TableStatusBadge,
-  TabStatusBadge,
-} from '@/components/shared/status-badge'
-
-describe('OrderStatusBadge', () => {
-  it.each([
-    ['pending', 'Pending'],
-    ['in_progress', 'In Progress'],
-    ['ready', 'Ready'],
-    ['served', 'Served'],
-    ['paid', 'Paid'],
-    ['cancelled', 'Cancelled'],
-  ] as const)('renders correct label for %s', (status, label) => {
-    render(<OrderStatusBadge status={status} />)
-    expect(screen.getByText(label)).toBeDefined()
-  })
-})
+import { ItemStatusBadge, TabStatusBadge } from '@/components/shared/status-badge'
 
 describe('ItemStatusBadge', () => {
   it.each([
@@ -31,18 +12,6 @@ describe('ItemStatusBadge', () => {
   ] as const)('renders correct label for %s', (status, label) => {
     render(<ItemStatusBadge status={status} />)
     expect(screen.getByText(label)).toBeDefined()
-  })
-})
-
-describe('TableStatusBadge', () => {
-  it('renders Available for available tables', () => {
-    render(<TableStatusBadge status="available" />)
-    expect(screen.getByText('Available')).toBeDefined()
-  })
-
-  it('renders Occupied for occupied tables', () => {
-    render(<TableStatusBadge status="occupied" />)
-    expect(screen.getByText('Occupied')).toBeDefined()
   })
 })
 

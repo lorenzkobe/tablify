@@ -1,8 +1,6 @@
 // Application-level type aliases
-export type Role = 'admin' | 'server' | 'kitchen'
-export type TableStatus = 'available' | 'occupied'
+export type Role = 'admin' | 'crew'
 export type TabStatus = 'open' | 'closed'
-export type OrderStatus = 'pending' | 'in_progress' | 'ready' | 'served' | 'paid' | 'cancelled'
 export type OrderItemStatus = 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
 
 // Application-level interfaces for use in components
@@ -10,14 +8,6 @@ export interface Profile {
   id: string
   full_name: string
   role: Role
-  created_at: string
-}
-
-export interface VenueTable {
-  id: string
-  label: string
-  capacity: number
-  status: TableStatus
   created_at: string
 }
 
@@ -30,15 +20,23 @@ export interface Tab {
   closed_at: string | null
 }
 
+// A "round" — a batch of items sent to the queue together. No status of its own.
 export interface Order {
   id: string
-  table_id: string | null
-  tab_id: string | null
+  tab_id: string
   taken_by: string
-  status: OrderStatus
   notes: string | null
   created_at: string
   updated_at: string
+}
+
+export interface StatusEvent {
+  id: string
+  order_item_id: string
+  from_status: OrderItemStatus | null
+  to_status: OrderItemStatus
+  actor: string
+  created_at: string
 }
 
 export interface MenuCategory {
@@ -77,40 +75,18 @@ export type Database = {
         Row: {
           id: string
           full_name: string
-          role: 'admin' | 'server' | 'kitchen'
+          role: 'admin' | 'crew'
           created_at: string
         }
         Insert: {
           id: string
           full_name: string
-          role?: 'admin' | 'server' | 'kitchen' | null
+          role?: 'admin' | 'crew' | null
         }
         Update: {
           id?: string
           full_name?: string
-          role?: 'admin' | 'server' | 'kitchen' | null
-        }
-        Relationships: []
-      }
-      venue_tables: {
-        Row: {
-          id: string
-          label: string
-          capacity: number
-          status: 'available' | 'occupied'
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          label: string
-          capacity?: number
-          status?: 'available' | 'occupied' | null
-        }
-        Update: {
-          id?: string
-          label?: string
-          capacity?: number
-          status?: 'available' | 'occupied' | null
+          role?: 'admin' | 'crew' | null
         }
         Relationships: []
       }
@@ -150,38 +126,25 @@ export type Database = {
       orders: {
         Row: {
           id: string
-          table_id: string | null
-          tab_id: string | null
+          tab_id: string
           taken_by: string
-          status: 'pending' | 'in_progress' | 'ready' | 'served' | 'paid' | 'cancelled'
           notes: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          table_id?: string | null
-          tab_id?: string | null
+          tab_id: string
           taken_by: string
-          status?: 'pending' | 'in_progress' | 'ready' | 'served' | 'paid' | 'cancelled' | null
           notes?: string | null
         }
         Update: {
           id?: string
-          table_id?: string | null
-          tab_id?: string | null
+          tab_id?: string
           taken_by?: string
-          status?: 'pending' | 'in_progress' | 'ready' | 'served' | 'paid' | 'cancelled' | null
           notes?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: 'orders_table_id_fkey'
-            columns: ['table_id']
-            isOneToOne: false
-            referencedRelation: 'venue_tables'
-            referencedColumns: ['id']
-          },
           {
             foreignKeyName: 'orders_tab_id_fkey'
             columns: ['tab_id']
@@ -301,6 +264,46 @@ export type Database = {
           }
         ]
       }
+      status_events: {
+        Row: {
+          id: string
+          order_item_id: string
+          from_status: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned' | null
+          to_status: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
+          actor: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          order_item_id: string
+          from_status?: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned' | null
+          to_status: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
+          actor: string
+        }
+        Update: {
+          id?: string
+          order_item_id?: string
+          from_status?: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned' | null
+          to_status?: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
+          actor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'status_events_order_item_id_fkey'
+            columns: ['order_item_id']
+            isOneToOne: false
+            referencedRelation: 'order_items'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'status_events_actor_fkey'
+            columns: ['actor']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -309,10 +312,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: 'admin' | 'server' | 'kitchen'
-      table_status: 'available' | 'occupied'
+      user_role: 'admin' | 'crew'
       tab_status: 'open' | 'closed'
-      order_status: 'pending' | 'in_progress' | 'ready' | 'served' | 'paid' | 'cancelled'
       order_item_status: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
     }
     CompositeTypes: {

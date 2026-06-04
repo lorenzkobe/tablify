@@ -4,9 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
-  Table2,
   Scroll,
-  ClipboardList,
   UtensilsCrossed,
   BookOpen,
   Users,
@@ -14,23 +12,28 @@ import {
 } from 'lucide-react'
 import { TablifyWordmark } from '@/components/shared/logo'
 import { ThemeToggle } from '@/components/shared/theme-toggle'
+import { Initials } from '@/components/shared/initials'
 import { logout } from '@/app/actions/auth'
 import type { Role } from '@/lib/database.types'
 import { cn } from '@/lib/utils'
 
+const ROLE_LABELS: Record<Role, string> = {
+  admin: 'Admin',
+  crew: 'Crew',
+}
+
 const NAV_ITEMS = [
-  { href: '/dashboard',   label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'server', 'kitchen'] as Role[] },
-  { href: '/tables',      label: 'Tables',    icon: Table2,           roles: ['admin', 'server'] as Role[] },
-  { href: '/tabs',        label: 'Tabs',      icon: Scroll,           roles: ['admin', 'server'] as Role[] },
-  { href: '/orders',      label: 'Orders',    icon: ClipboardList,    roles: ['admin', 'server'] as Role[] },
-  { href: '/kitchen',     label: 'Kitchen',   icon: UtensilsCrossed,  roles: ['admin', 'kitchen'] as Role[] },
+  { href: '/dashboard',   label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'crew'] as Role[] },
+  { href: '/tabs',        label: 'Tabs',      icon: Scroll,           roles: ['admin', 'crew'] as Role[] },
+  { href: '/queue',       label: 'Queue',     icon: UtensilsCrossed,  roles: ['admin', 'crew'] as Role[] },
   { href: '/menu',        label: 'Menu',      icon: BookOpen,         roles: ['admin'] as Role[] },
   { href: '/admin/users', label: 'Users',     icon: Users,            roles: ['admin'] as Role[] },
 ]
 
-export function AppNav({ role }: { role: Role }) {
+export function AppNav({ role, fullName }: { role: Role; fullName: string }) {
   const pathname = usePathname()
   const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(role))
+  const profileActive = pathname === '/profile'
 
   return (
     <>
@@ -61,6 +64,24 @@ export function AppNav({ role }: { role: Role }) {
           })}
         </nav>
 
+        <Link
+          href="/profile"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-2 py-2 mb-1 transition-colors min-h-[44px]',
+            profileActive
+              ? 'bg-primary/10 ring-1 ring-inset ring-primary/20'
+              : 'hover:bg-accent'
+          )}
+        >
+          <Initials name={fullName || 'User'} className="w-8 h-8 text-xs" />
+          <div className="min-w-0 flex-1">
+            <p className={cn('text-sm font-medium leading-tight truncate', profileActive ? 'text-primary' : 'text-foreground')}>
+              {fullName || 'Your profile'}
+            </p>
+            <p className="text-xs text-muted-foreground leading-tight">{ROLE_LABELS[role]}</p>
+          </div>
+        </Link>
+
         <div className="pt-3 border-t border-border flex items-center gap-1">
           <form action={logout} className="flex-1">
             <button
@@ -79,6 +100,16 @@ export function AppNav({ role }: { role: Role }) {
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4 bg-sidebar border-b border-border">
         <TablifyWordmark />
         <div className="flex items-center gap-1">
+          <Link
+            href="/profile"
+            aria-label="Your profile"
+            className={cn(
+              'flex items-center justify-center rounded-full transition-opacity',
+              profileActive ? 'ring-2 ring-primary' : 'opacity-90 hover:opacity-100'
+            )}
+          >
+            <Initials name={fullName || 'User'} className="w-8 h-8 text-xs" />
+          </Link>
           <ThemeToggle className="w-9 h-9" />
           <form action={logout}>
             <button

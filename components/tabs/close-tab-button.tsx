@@ -38,15 +38,15 @@ export function CloseTabButton({ tabId, tabName, total }: { tabId: string; tabNa
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-sm gap-0 p-0 overflow-hidden">
-          <div className={`px-6 pt-6 pb-5 border-b border-border ${hasBalance ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
+          <div className={`px-6 pt-6 pb-5 border-b border-border ${hasBalance ? 'bg-amber-500/5' : ''}`}>
             <div className="flex items-center gap-3 mb-1">
-              <div className={`flex items-center justify-center w-9 h-9 rounded-lg ${hasBalance ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-destructive/10'}`}>
+              <div className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${hasBalance ? 'bg-amber-500/10' : 'bg-destructive/10'}`}>
                 {hasBalance
                   ? <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400" />
                   : <X size={18} className="text-destructive" />
                 }
               </div>
-              <DialogTitle className="text-base font-semibold">
+              <DialogTitle className="text-base font-semibold tracking-tight">
                 Close &ldquo;{tabName}&rdquo;?
               </DialogTitle>
             </div>
@@ -57,7 +57,7 @@ export function CloseTabButton({ tabId, tabName, total }: { tabId: string; tabNa
             </DialogDescription>
           </div>
 
-          <div className="px-6 pb-6 flex gap-2">
+          <div className="px-6 pt-5 pb-6 flex gap-2">
             <Button variant="outline" onClick={() => setOpen(false)} className="flex-1 min-h-[44px]">
               Cancel
             </Button>

@@ -12,15 +12,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('full_name, role')
     .eq('id', user.id)
     .single()
 
-  const role = (profile?.role ?? 'server') as Role
+  const role = (profile?.role ?? 'crew') as Role
+  const fullName = profile?.full_name ?? ''
 
   return (
     <div className="flex min-h-screen">
-      <AppNav role={role} />
+      <AppNav role={role} fullName={fullName} />
       {/* pt-14 pb-16 reserve space for mobile top/bottom bars; removed on md+ */}
       <main className="flex-1 overflow-auto pt-14 pb-16 md:pt-0 md:pb-0">
         <div className="max-w-5xl mx-auto">
