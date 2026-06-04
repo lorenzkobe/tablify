@@ -1,0 +1,39 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { createClient } from '@/lib/supabase/server'
+
+export async function createTab(name: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: tab, error } = await supabase
+    .from('tabs')
+    .insert({ name: name.trim(), opened_by: user.id, status: 'open' })
+    .select('id')
+    .single()
+
+  if (error || !tab) return { error: error?.message ?? 'Failed to create tab' }
+
+  revalidatePath('/tabs')
+  revalidatePath('/dashboard')
+
+  return { tabId: tab.id }
+}
+
+export async function closeTab(tabId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('tabs')
+    .update({ status: 'closed', closed_at: new Date().toISOString() })
+    .eq('id', tabId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/tabs')
+  revalidatePath('/dashboard')
+
+  return {}
+}
