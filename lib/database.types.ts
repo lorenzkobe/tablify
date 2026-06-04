@@ -15,6 +15,7 @@ export interface Organisation {
   timezone: string
   open_time: string
   close_time: string
+  closes_next_day: boolean
   currency: string
   created_at: string
 }
@@ -100,6 +101,7 @@ export type Database = {
           timezone: string
           open_time: string
           close_time: string
+          closes_next_day: boolean
           currency: string
           created_at: string
         }
@@ -110,6 +112,7 @@ export type Database = {
           timezone?: string
           open_time?: string
           close_time?: string
+          closes_next_day?: boolean
           currency?: string
         }
         Update: {
@@ -119,6 +122,7 @@ export type Database = {
           timezone?: string
           open_time?: string
           close_time?: string
+          closes_next_day?: boolean
           currency?: string
         }
         Relationships: []

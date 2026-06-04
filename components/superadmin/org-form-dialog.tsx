@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { TimeSelect } from '@/components/shared/time-select'
+import { CurrencySelect } from '@/components/shared/currency-select'
+import { NextDayToggle } from '@/components/shared/next-day-toggle'
 import { toast } from 'sonner'
-import { parseTime } from '@/lib/business-day'
+import { closesNextDay, isInvalidSameDayClose } from '@/lib/format'
 import type { Organisation } from '@/lib/database.types'
 
 interface OrgForm {
@@ -17,6 +19,7 @@ interface OrgForm {
   timezone: string
   openTime: string
   closeTime: string
+  closesNextDay: boolean
   currency: string
 }
 
@@ -25,17 +28,13 @@ const BLANK: OrgForm = {
   timezone: 'Asia/Manila',
   openTime: '17:00',
   closeTime: '03:00',
+  closesNextDay: true,
   currency: 'PHP',
 }
 
 // Normalise a "HH:MM:SS" time from the DB to the "HH:MM" an <input type=time> wants.
 function toTimeInput(t: string): string {
   return t.slice(0, 5)
-}
-
-// A close time that is at or before the open time rolls into the next calendar day.
-export function closesNextDay(openTime: string, closeTime: string): boolean {
-  return parseTime(closeTime) <= parseTime(openTime)
 }
 
 function formFor(org: Organisation | null): OrgForm {
@@ -45,6 +44,7 @@ function formFor(org: Organisation | null): OrgForm {
     timezone: org.timezone,
     openTime: toTimeInput(org.open_time),
     closeTime: toTimeInput(org.close_time),
+    closesNextDay: org.closes_next_day,
     currency: org.currency,
   }
 }
@@ -77,10 +77,36 @@ export function OrgFormDialog({
 function OrgForm({ editing, onClose }: { editing: Organisation | null; onClose: () => void }) {
   const router = useRouter()
   const [form, setForm] = useState<OrgForm>(() => formFor(editing))
+  // Until the user overrides it, the toggle tracks the value derived from the
+  // open/close times so a sensible default follows along as the times change.
+  const [nextDayTouched, setNextDayTouched] = useState(
+    editing ? editing.closes_next_day !== closesNextDay(editing.open_time, editing.close_time) : false,
+  )
   const [loading, setLoading] = useState(false)
 
+  function setOpenTime(openTime: string) {
+    setForm((f) => ({
+      ...f,
+      openTime,
+      closesNextDay: nextDayTouched ? f.closesNextDay : closesNextDay(openTime, f.closeTime),
+    }))
+  }
+  function setCloseTime(closeTime: string) {
+    setForm((f) => ({
+      ...f,
+      closeTime,
+      closesNextDay: nextDayTouched ? f.closesNextDay : closesNextDay(f.openTime, closeTime),
+    }))
+  }
+  function setClosesNextDay(closesNextDay: boolean) {
+    setNextDayTouched(true)
+    setForm((f) => ({ ...f, closesNextDay }))
+  }
+
+  const invalidClose = isInvalidSameDayClose(form.openTime, form.closeTime, form.closesNextDay)
+
   async function handleSave() {
-    if (!form.name.trim()) return
+    if (!form.name.trim() || invalidClose) return
     setLoading(true)
     const result = editing
       ? await updateOrganisation(editing.id, form)
@@ -121,31 +147,25 @@ function OrgForm({ editing, onClose }: { editing: Organisation | null; onClose: 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="org-open" className="text-sm font-medium">Opens</Label>
-          <TimeSelect
-            id="org-open"
-            value={form.openTime}
-            onChange={(openTime) => setForm({ ...form, openTime })}
-          />
+          <TimeSelect id="org-open" value={form.openTime} onChange={setOpenTime} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="org-close" className="text-sm font-medium">Closes</Label>
-          <TimeSelect
-            id="org-close"
-            value={form.closeTime}
-            onChange={(closeTime) => setForm({ ...form, closeTime })}
-            badge={closesNextDay(form.openTime, form.closeTime) ? '+1 day' : undefined}
-          />
+          <TimeSelect id="org-close" value={form.closeTime} onChange={setCloseTime} />
         </div>
       </div>
+      <NextDayToggle checked={form.closesNextDay} onCheckedChange={setClosesNextDay} />
+      {invalidClose && (
+        <p className="text-xs text-destructive">
+          Closing time is before the opening time. Turn on “Closes next day”, or pick a later closing time.
+        </p>
+      )}
       <div className="space-y-2">
-        <Label htmlFor="org-currency" className="text-sm font-medium">Currency (ISO)</Label>
-        <Input
+        <Label htmlFor="org-currency" className="text-sm font-medium">Currency</Label>
+        <CurrencySelect
           id="org-currency"
-          placeholder="PHP"
           value={form.currency}
-          onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
-          maxLength={3}
-          className="h-10"
+          onChange={(currency) => setForm({ ...form, currency })}
         />
       </div>
 
@@ -155,7 +175,7 @@ function OrgForm({ editing, onClose }: { editing: Organisation | null; onClose: 
         </Button>
         <Button
           onClick={handleSave}
-          disabled={!form.name.trim() || loading}
+          disabled={!form.name.trim() || invalidClose || loading}
           className="flex-1 h-11"
         >
           {loading ? 'Saving…' : editing ? 'Save' : 'Create'}

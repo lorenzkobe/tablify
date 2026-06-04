@@ -7,31 +7,55 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TimeSelect } from '@/components/shared/time-select'
+import { CurrencySelect } from '@/components/shared/currency-select'
+import { NextDayToggle } from '@/components/shared/next-day-toggle'
 import { toast } from 'sonner'
-import { parseTime } from '@/lib/business-day'
+import { closesNextDay, isInvalidSameDayClose } from '@/lib/format'
 import type { Organisation } from '@/lib/database.types'
 
 function toTimeInput(t: string): string {
   return t.slice(0, 5)
 }
 
-function closesNextDay(openTime: string, closeTime: string): boolean {
-  return parseTime(closeTime) <= parseTime(openTime)
-}
-
 export function OrgSettingsForm({ organisation }: { organisation: Organisation }) {
   const router = useRouter()
   const [name, setName] = useState(organisation.name)
   const [timezone, setTimezone] = useState(organisation.timezone)
-  const [openTime, setOpenTime] = useState(toTimeInput(organisation.open_time))
-  const [closeTime, setCloseTime] = useState(toTimeInput(organisation.close_time))
+  const [openTime, setOpenTimeState] = useState(toTimeInput(organisation.open_time))
+  const [closeTime, setCloseTimeState] = useState(toTimeInput(organisation.close_time))
+  const [closesNextDayValue, setClosesNextDayValue] = useState(organisation.closes_next_day)
   const [currency, setCurrency] = useState(organisation.currency)
+  const [nextDayTouched, setNextDayTouched] = useState(
+    organisation.closes_next_day !== closesNextDay(organisation.open_time, organisation.close_time),
+  )
   const [loading, setLoading] = useState(false)
 
+  function setOpenTime(value: string) {
+    setOpenTimeState(value)
+    if (!nextDayTouched) setClosesNextDayValue(closesNextDay(value, closeTime))
+  }
+  function setCloseTime(value: string) {
+    setCloseTimeState(value)
+    if (!nextDayTouched) setClosesNextDayValue(closesNextDay(openTime, value))
+  }
+  function setClosesNextDay(value: boolean) {
+    setNextDayTouched(true)
+    setClosesNextDayValue(value)
+  }
+
+  const invalidClose = isInvalidSameDayClose(openTime, closeTime, closesNextDayValue)
+
   async function handleSave() {
-    if (!name.trim()) return
+    if (!name.trim() || invalidClose) return
     setLoading(true)
-    const result = await updateMyOrganisation({ name, timezone, openTime, closeTime, currency })
+    const result = await updateMyOrganisation({
+      name,
+      timezone,
+      openTime,
+      closeTime,
+      closesNextDay: closesNextDayValue,
+      currency,
+    })
     setLoading(false)
     if (result.error) {
       toast.error(result.error)
@@ -69,26 +93,20 @@ export function OrgSettingsForm({ organisation }: { organisation: Organisation }
         </div>
         <div className="space-y-2">
           <Label htmlFor="org-close" className="text-sm font-medium">Closes</Label>
-          <TimeSelect
-            id="org-close"
-            value={closeTime}
-            onChange={setCloseTime}
-            badge={closesNextDay(openTime, closeTime) ? '+1 day' : undefined}
-          />
+          <TimeSelect id="org-close" value={closeTime} onChange={setCloseTime} />
         </div>
       </div>
+      <NextDayToggle checked={closesNextDayValue} onCheckedChange={setClosesNextDay} />
+      {invalidClose && (
+        <p className="text-xs text-destructive">
+          Closing time is before the opening time. Turn on “Closes next day”, or pick a later closing time.
+        </p>
+      )}
       <div className="space-y-2">
-        <Label htmlFor="org-currency" className="text-sm font-medium">Currency (ISO)</Label>
-        <Input
-          id="org-currency"
-          placeholder="PHP"
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-          maxLength={3}
-          className="h-10"
-        />
+        <Label htmlFor="org-currency" className="text-sm font-medium">Currency</Label>
+        <CurrencySelect id="org-currency" value={currency} onChange={setCurrency} />
       </div>
-      <Button onClick={handleSave} disabled={!name.trim() || loading} className="h-11 w-full">
+      <Button onClick={handleSave} disabled={!name.trim() || invalidClose || loading} className="h-11 w-full">
         {loading ? 'Saving…' : 'Save changes'}
       </Button>
     </div>

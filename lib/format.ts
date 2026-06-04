@@ -1,3 +1,5 @@
+import { parseTime } from '@/lib/business-day'
+
 export function formatDistanceToNow(dateStr: string): string {
   const date = new Date(dateStr)
   const now = new Date()
@@ -27,4 +29,20 @@ export function formatClock(hhmm: string): string {
   const period = h < 12 ? 'AM' : 'PM'
   const hour12 = h % 12 === 0 ? 12 : h % 12
   return `${hour12}:${String(m).padStart(2, '0')} ${period}`
+}
+
+// A close time that is at or before the open time rolls into the next calendar day.
+export function closesNextDay(openTime: string, closeTime: string): boolean {
+  return parseTime(closeTime) <= parseTime(openTime)
+}
+
+// Invalid schedule: a same-day close that lands at or before the open time —
+// the venue would close before (or exactly when) it opens. Only meaningful when
+// the user has said the close does NOT roll into the next day.
+export function isInvalidSameDayClose(
+  openTime: string,
+  closeTime: string,
+  closesNextDayFlag: boolean,
+): boolean {
+  return !closesNextDayFlag && parseTime(closeTime) <= parseTime(openTime)
 }

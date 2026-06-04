@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { isInvalidSameDayClose } from '@/lib/format'
 
 // Admin self-service: edit the operational settings of the caller's OWN
 // organisation. Uses the RLS-scoped client (not the service role) — the
@@ -12,6 +13,7 @@ export async function updateMyOrganisation(data: {
   timezone?: string
   openTime?: string
   closeTime?: string
+  closesNextDay?: boolean
   currency?: string
 }) {
   const supabase = await createClient()
@@ -27,6 +29,15 @@ export async function updateMyOrganisation(data: {
   if (profile?.role !== 'admin') return { error: 'Forbidden' as const }
   if (!profile.organisation_id) return { error: 'You are not assigned to an organisation' as const }
 
+  if (
+    data.openTime &&
+    data.closeTime &&
+    data.closesNextDay !== undefined &&
+    isInvalidSameDayClose(data.openTime, data.closeTime, data.closesNextDay)
+  ) {
+    return { error: 'Closing time must be after the opening time, or marked as closing the next day.' }
+  }
+
   const { error } = await supabase
     .from('organisations')
     .update({
@@ -34,6 +45,7 @@ export async function updateMyOrganisation(data: {
       ...(data.timezone !== undefined && { timezone: data.timezone }),
       ...(data.openTime !== undefined && { open_time: data.openTime }),
       ...(data.closeTime !== undefined && { close_time: data.closeTime }),
+      ...(data.closesNextDay !== undefined && { closes_next_day: data.closesNextDay }),
       ...(data.currency !== undefined && { currency: data.currency }),
     })
     .eq('id', profile.organisation_id)

@@ -18,8 +18,6 @@ interface TimeSelectProps {
   onChange: (value: string) => void
   /** Minutes between options. */
   step?: number
-  /** Optional pill, e.g. "+1 day" when close rolls past midnight. */
-  badge?: string
   className?: string
 }
 
@@ -42,7 +40,7 @@ function buildOptions(step: number, include: string): string[] {
 // On-brand, fully themeable time picker. Replaces the native <input type="time">
 // (whose popup the browser controls and can't be styled) with our Select
 // dropdown, and renders every time in 12-hour format while storing 24h "HH:MM".
-export function TimeSelect({ id, value, onChange, step = 15, badge, className }: TimeSelectProps) {
+export function TimeSelect({ id, value, onChange, step = 15, className }: TimeSelectProps) {
   const options = buildOptions(step, value)
 
   return (
@@ -54,11 +52,6 @@ export function TimeSelect({ id, value, onChange, step = 15, badge, className }:
             {(val) => (val ? formatClock(val as string) : '--:--')}
           </SelectValue>
         </span>
-        {badge && (
-          <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary ring-1 ring-inset ring-primary/20">
-            {badge}
-          </span>
-        )}
       </SelectTrigger>
       <SelectContent className="max-h-72">
         {options.map((opt) => (

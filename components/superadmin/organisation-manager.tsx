@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { OrgFormDialog, closesNextDay } from '@/components/superadmin/org-form-dialog'
+import { OrgFormDialog } from '@/components/superadmin/org-form-dialog'
 import { Button } from '@/components/ui/button'
 import { Plus, Building2, Pencil, Clock, ChevronRight } from 'lucide-react'
 import { formatClock } from '@/lib/format'
@@ -53,7 +53,7 @@ export function OrganisationManager({ organisations }: { organisations: Organisa
                   <Clock size={12} />
                   <span>
                     {formatClock(org.open_time)} – {formatClock(org.close_time)}
-                    {closesNextDay(org.open_time, org.close_time) && (
+                    {org.closes_next_day && (
                       <span className="ml-1 text-primary/80">+1d</span>
                     )}
                   </span>

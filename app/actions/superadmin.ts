@@ -5,6 +5,10 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { IMPERSONATION_COOKIE, type ImpersonationStash } from '@/lib/impersonation'
+import { isInvalidSameDayClose } from '@/lib/format'
+
+const SAME_DAY_CLOSE_ERROR =
+  'Closing time must be after the opening time, or marked as closing the next day.'
 
 // Guard: confirm the caller is a superadmin before any service-role use.
 async function requireSuperadmin() {
@@ -35,10 +39,20 @@ export async function createOrganisation(data: {
   timezone?: string
   openTime?: string
   closeTime?: string
+  closesNextDay?: boolean
   currency?: string
 }) {
   const guard = await requireSuperadmin()
   if ('error' in guard) return { error: guard.error }
+
+  if (
+    data.openTime &&
+    data.closeTime &&
+    data.closesNextDay !== undefined &&
+    isInvalidSameDayClose(data.openTime, data.closeTime, data.closesNextDay)
+  ) {
+    return { error: SAME_DAY_CLOSE_ERROR }
+  }
 
   const supabase = await createAdminClient()
   const { error } = await supabase.from('organisations').insert({
@@ -47,6 +61,7 @@ export async function createOrganisation(data: {
     ...(data.timezone && { timezone: data.timezone }),
     ...(data.openTime && { open_time: data.openTime }),
     ...(data.closeTime && { close_time: data.closeTime }),
+    ...(data.closesNextDay !== undefined && { closes_next_day: data.closesNextDay }),
     ...(data.currency && { currency: data.currency }),
   })
 
@@ -57,10 +72,26 @@ export async function createOrganisation(data: {
 
 export async function updateOrganisation(
   id: string,
-  data: { name?: string; timezone?: string; openTime?: string; closeTime?: string; currency?: string },
+  data: {
+    name?: string
+    timezone?: string
+    openTime?: string
+    closeTime?: string
+    closesNextDay?: boolean
+    currency?: string
+  },
 ) {
   const guard = await requireSuperadmin()
   if ('error' in guard) return { error: guard.error }
+
+  if (
+    data.openTime &&
+    data.closeTime &&
+    data.closesNextDay !== undefined &&
+    isInvalidSameDayClose(data.openTime, data.closeTime, data.closesNextDay)
+  ) {
+    return { error: SAME_DAY_CLOSE_ERROR }
+  }
 
   const supabase = await createAdminClient()
   const { error } = await supabase
@@ -70,6 +101,7 @@ export async function updateOrganisation(
       ...(data.timezone !== undefined && { timezone: data.timezone }),
       ...(data.openTime !== undefined && { open_time: data.openTime }),
       ...(data.closeTime !== undefined && { close_time: data.closeTime }),
+      ...(data.closesNextDay !== undefined && { closes_next_day: data.closesNextDay }),
       ...(data.currency !== undefined && { currency: data.currency }),
     })
     .eq('id', id)

@@ -3,7 +3,6 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, Clock } from 'lucide-react'
 import { formatClock } from '@/lib/format'
-import { closesNextDay } from '@/components/superadmin/org-form-dialog'
 import { OrgEditButton } from '@/components/superadmin/org-edit-button'
 import { OrgMemberManager } from '@/components/superadmin/org-member-manager'
 
@@ -51,7 +50,7 @@ export default async function SuperadminOrganisationDetailPage({
               <Clock size={13} />
               <span>
                 {formatClock(org.open_time)} – {formatClock(org.close_time)}
-                {closesNextDay(org.open_time, org.close_time) && (
+                {org.closes_next_day && (
                   <span className="ml-1 text-primary/80">+1d</span>
                 )}
               </span>
