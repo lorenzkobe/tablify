@@ -18,5 +18,13 @@ export function formatCurrency(amount: number, currency = 'PHP'): string {
 }
 
 export function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return new Date(dateStr).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+// Format a wall-clock "HH:MM" (or "HH:MM:SS") string as 12-hour time, e.g. "5:00 PM".
+export function formatClock(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number)
+  const period = h < 12 ? 'AM' : 'PM'
+  const hour12 = h % 12 === 0 ? 12 : h % 12
+  return `${hour12}:${String(m).padStart(2, '0')} ${period}`
 }

@@ -11,6 +11,7 @@ import {
   BarChart3,
   Building2,
   UserCog,
+  Settings,
   LogOut,
 } from 'lucide-react'
 import { TablifyWordmark } from '@/components/shared/logo'
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { href: '/menu',                     label: 'Menu',          icon: BookOpen,        roles: ['admin'] as Role[] },
   { href: '/admin/revenue',            label: 'Revenue',       icon: BarChart3,       roles: ['admin'] as Role[] },
   { href: '/admin/users',              label: 'Users',         icon: Users,           roles: ['admin'] as Role[] },
+  { href: '/admin/settings',           label: 'Settings',      icon: Settings,        roles: ['admin'] as Role[] },
   { href: '/superadmin/organisations', label: 'Organisations', icon: Building2,       roles: ['superadmin'] as Role[] },
   { href: '/superadmin/users',         label: 'All Users',     icon: UserCog,         roles: ['superadmin'] as Role[] },
 ]

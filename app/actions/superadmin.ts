@@ -91,6 +91,47 @@ export async function assignUserToOrg(userId: string, organisationId: string) {
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
+  revalidatePath('/superadmin/organisations/[id]', 'page')
+  return {}
+}
+
+// Remove a user from their organisation, leaving them unassigned.
+export async function removeUserFromOrg(userId: string) {
+  const guard = await requireSuperadmin()
+  if ('error' in guard) return { error: guard.error }
+
+  const supabase = await createAdminClient()
+  const { error } = await supabase
+    .from('profiles')
+    .update({ organisation_id: null })
+    .eq('id', userId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/superadmin/users')
+  revalidatePath('/superadmin/organisations/[id]', 'page')
+  return {}
+}
+
+// Invite a brand-new user straight into a specific organisation. Unlike the
+// admin invite (which derives the org from the caller), the superadmin has no
+// org of their own, so the target org is passed explicitly.
+export async function inviteUserToOrg(
+  email: string,
+  fullName: string,
+  role: 'admin' | 'crew',
+  organisationId: string,
+) {
+  const guard = await requireSuperadmin()
+  if ('error' in guard) return { error: guard.error }
+
+  const supabase = await createAdminClient()
+  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    data: { full_name: fullName, role, organisation_id: organisationId },
+  })
+
+  if (error) return { error: error.message }
+  revalidatePath('/superadmin/users')
+  revalidatePath('/superadmin/organisations/[id]', 'page')
   return {}
 }
 
@@ -104,6 +145,7 @@ export async function setUserRole(userId: string, role: 'admin' | 'crew') {
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
+  revalidatePath('/superadmin/organisations/[id]', 'page')
   return {}
 }
 
