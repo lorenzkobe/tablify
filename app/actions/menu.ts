@@ -2,9 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getOrganisation } from '@/lib/organisation'
 
 export async function createCategory(name: string) {
   const supabase = await createClient()
+  const org = await getOrganisation()
+  if (!org) return { error: 'No organisation assigned' }
+
   const { data: maxSort } = await supabase
     .from('menu_categories')
     .select('sort')
@@ -14,7 +18,7 @@ export async function createCategory(name: string) {
 
   const { error } = await supabase
     .from('menu_categories')
-    .insert({ name: name.trim(), sort: (maxSort?.sort ?? -1) + 1 })
+    .insert({ name: name.trim(), sort: (maxSort?.sort ?? -1) + 1, organisation_id: org.id })
 
   if (error) return { error: error.message }
   revalidatePath('/menu')
@@ -48,6 +52,9 @@ export async function createMenuItem(data: {
   price: number
 }) {
   const supabase = await createClient()
+  const org = await getOrganisation()
+  if (!org) return { error: 'No organisation assigned' }
+
   const { data: maxSort } = await supabase
     .from('menu_items')
     .select('sort')
@@ -63,6 +70,7 @@ export async function createMenuItem(data: {
     price: data.price,
     available: true,
     sort: (maxSort?.sort ?? -1) + 1,
+    organisation_id: org.id,
   })
 
   if (error) return { error: error.message }

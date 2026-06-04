@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { toast } from 'sonner'
-import { Plus, Trash2, ShieldCheck, Utensils, Users } from 'lucide-react'
+import { Plus, Trash2, ShieldCheck, Utensils, Users, Crown } from 'lucide-react'
 import { Initials } from '@/components/shared/initials'
 import { cn } from '@/lib/utils'
 import type { Profile, Role } from '@/lib/database.types'
 
 export const ROLE_CONFIG: Record<Role, { label: string; description: string; color: string; avatarRing: string; icon: React.ReactNode }> = {
+  superadmin: { label: 'Superadmin', description: 'Platform operator · manages organisations', color: 'text-primary bg-primary/10', avatarRing: 'ring-primary/30', icon: <Crown size={13} /> },
   admin: { label: 'Admin', description: 'Full access · handles cash & closes bills', color: 'text-primary bg-primary/10',       avatarRing: 'ring-primary/30',    icon: <ShieldCheck size={13} /> },
   crew:  { label: 'Crew',  description: 'Take orders & work the queue',              color: 'text-indigo-500 bg-indigo-500/10', avatarRing: 'ring-indigo-500/30', icon: <Utensils size={13} /> },
 }
@@ -196,11 +197,13 @@ export function UserManager({ users, currentUserId }: { users: Profile[]; curren
                   <span className="flex-1 text-left text-sm">{ROLE_CONFIG[role]?.label ?? role}</span>
                 </SelectTrigger>
                 <SelectContent align="start">
-                  {(Object.entries(ROLE_CONFIG) as [Role, typeof ROLE_CONFIG[Role]][]).map(([key, cfg]) => (
-                    <SelectItem key={key} value={key} description={cfg.description}>
-                      {cfg.label}
-                    </SelectItem>
-                  ))}
+                  {(Object.entries(ROLE_CONFIG) as [Role, typeof ROLE_CONFIG[Role]][])
+                    .filter(([key]) => key !== 'superadmin')
+                    .map(([key, cfg]) => (
+                      <SelectItem key={key} value={key} description={cfg.description}>
+                        {cfg.label}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

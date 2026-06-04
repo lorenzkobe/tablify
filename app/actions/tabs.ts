@@ -2,15 +2,20 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getOrganisation, isOrgOpenNow } from '@/lib/organisation'
 
 export async function createTab(name: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  const org = await getOrganisation()
+  if (!org) return { error: 'No organisation assigned' }
+  if (!isOrgOpenNow(org)) return { error: 'The bar is closed' }
+
   const { data: tab, error } = await supabase
     .from('tabs')
-    .insert({ name: name.trim(), opened_by: user.id, status: 'open' })
+    .insert({ name: name.trim(), opened_by: user.id, status: 'open', organisation_id: org.id })
     .select('id')
     .single()
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getOrganisation, isOrgOpenNow } from '@/lib/organisation'
 import { isValidTransition } from '@/lib/order-status'
 import type { OrderItemStatus } from '@/lib/database.types'
 
@@ -15,12 +16,17 @@ export async function createOrder(data: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  const org = await getOrganisation()
+  if (!org) return { error: 'No organisation assigned' }
+  if (!isOrgOpenNow(org)) return { error: 'The bar is closed' }
+
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
       tab_id: data.tabId,
       taken_by: user.id,
       notes: data.notes ?? null,
+      organisation_id: org.id,
     })
     .select('id')
     .single()
@@ -34,6 +40,7 @@ export async function createOrder(data: {
     unit_price: item.unitPrice,
     notes: item.notes ?? null,
     status: 'ordered' as OrderItemStatus,
+    organisation_id: org.id,
   }))
 
   const { error: itemsError } = await supabase.from('order_items').insert(itemRows)

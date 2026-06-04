@@ -1,13 +1,29 @@
 // Application-level type aliases
-export type Role = 'admin' | 'crew'
+export type Role = 'admin' | 'crew' | 'superadmin'
 export type TabStatus = 'open' | 'closed'
 export type OrderItemStatus = 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
 
 // Application-level interfaces for use in components
+
+// A business tenant. Owns its own menu, tabs, orders, users and revenue.
+// timezone + open/close_time drive business-day revenue attribution and the
+// "bar is closed" order restriction.
+export interface Organisation {
+  id: string
+  name: string
+  slug: string
+  timezone: string
+  open_time: string
+  close_time: string
+  currency: string
+  created_at: string
+}
+
 export interface Profile {
   id: string
   full_name: string
   role: Role
+  organisation_id: string | null // null for a superadmin (no org)
   created_at: string
 }
 
@@ -16,6 +32,7 @@ export interface Tab {
   name: string
   status: TabStatus
   opened_by: string
+  organisation_id: string
   created_at: string
   closed_at: string | null
 }
@@ -26,6 +43,7 @@ export interface Order {
   tab_id: string
   taken_by: string
   notes: string | null
+  organisation_id: string
   created_at: string
   updated_at: string
 }
@@ -43,6 +61,7 @@ export interface MenuCategory {
   id: string
   name: string
   sort: number
+  organisation_id: string
 }
 
 export interface MenuItem {
@@ -53,6 +72,7 @@ export interface MenuItem {
   price: number
   available: boolean
   sort: number
+  organisation_id: string
 }
 
 export interface OrderItem {
@@ -63,6 +83,7 @@ export interface OrderItem {
   unit_price: number
   status: OrderItemStatus
   notes: string | null
+  organisation_id: string
   created_at: string
   updated_at: string
 }
@@ -71,24 +92,66 @@ export interface OrderItem {
 export type Database = {
   public: {
     Tables: {
+      organisations: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          timezone: string
+          open_time: string
+          close_time: string
+          currency: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          timezone?: string
+          open_time?: string
+          close_time?: string
+          currency?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          timezone?: string
+          open_time?: string
+          close_time?: string
+          currency?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string
           full_name: string
-          role: 'admin' | 'crew'
+          role: 'admin' | 'crew' | 'superadmin'
+          organisation_id: string | null
           created_at: string
         }
         Insert: {
           id: string
           full_name: string
-          role?: 'admin' | 'crew' | null
+          role?: 'admin' | 'crew' | 'superadmin' | null
+          organisation_id?: string | null
         }
         Update: {
           id?: string
           full_name?: string
-          role?: 'admin' | 'crew' | null
+          role?: 'admin' | 'crew' | 'superadmin' | null
+          organisation_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'profiles_organisation_id_fkey'
+            columns: ['organisation_id']
+            isOneToOne: false
+            referencedRelation: 'organisations'
+            referencedColumns: ['id']
+          }
+        ]
       }
       tabs: {
         Row: {
@@ -96,6 +159,7 @@ export type Database = {
           name: string
           status: 'open' | 'closed'
           opened_by: string
+          organisation_id: string
           created_at: string
           closed_at: string | null
         }
@@ -104,6 +168,7 @@ export type Database = {
           name: string
           status?: 'open' | 'closed' | null
           opened_by: string
+          organisation_id: string
           closed_at?: string | null
         }
         Update: {
@@ -111,6 +176,7 @@ export type Database = {
           name?: string
           status?: 'open' | 'closed' | null
           opened_by?: string
+          organisation_id?: string
           closed_at?: string | null
         }
         Relationships: [
@@ -119,6 +185,13 @@ export type Database = {
             columns: ['opened_by']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'tabs_organisation_id_fkey'
+            columns: ['organisation_id']
+            isOneToOne: false
+            referencedRelation: 'organisations'
             referencedColumns: ['id']
           }
         ]
@@ -129,6 +202,7 @@ export type Database = {
           tab_id: string
           taken_by: string
           notes: string | null
+          organisation_id: string
           created_at: string
           updated_at: string
         }
@@ -137,12 +211,14 @@ export type Database = {
           tab_id: string
           taken_by: string
           notes?: string | null
+          organisation_id?: string
         }
         Update: {
           id?: string
           tab_id?: string
           taken_by?: string
           notes?: string | null
+          organisation_id?: string
         }
         Relationships: [
           {
@@ -158,6 +234,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'orders_organisation_id_fkey'
+            columns: ['organisation_id']
+            isOneToOne: false
+            referencedRelation: 'organisations'
+            referencedColumns: ['id']
           }
         ]
       }
@@ -166,18 +249,29 @@ export type Database = {
           id: string
           name: string
           sort: number
+          organisation_id: string
         }
         Insert: {
           id?: string
           name: string
           sort?: number
+          organisation_id: string
         }
         Update: {
           id?: string
           name?: string
           sort?: number
+          organisation_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'menu_categories_organisation_id_fkey'
+            columns: ['organisation_id']
+            isOneToOne: false
+            referencedRelation: 'organisations'
+            referencedColumns: ['id']
+          }
+        ]
       }
       menu_items: {
         Row: {
@@ -188,6 +282,7 @@ export type Database = {
           price: number
           available: boolean
           sort: number
+          organisation_id: string
         }
         Insert: {
           id?: string
@@ -197,6 +292,7 @@ export type Database = {
           price: number
           available?: boolean
           sort?: number
+          organisation_id: string
         }
         Update: {
           id?: string
@@ -206,6 +302,7 @@ export type Database = {
           price?: number
           available?: boolean
           sort?: number
+          organisation_id?: string
         }
         Relationships: [
           {
@@ -213,6 +310,13 @@ export type Database = {
             columns: ['category_id']
             isOneToOne: false
             referencedRelation: 'menu_categories'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'menu_items_organisation_id_fkey'
+            columns: ['organisation_id']
+            isOneToOne: false
+            referencedRelation: 'organisations'
             referencedColumns: ['id']
           }
         ]
@@ -226,6 +330,7 @@ export type Database = {
           unit_price: number
           status: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
           notes: string | null
+          organisation_id: string
           created_at: string
           updated_at: string
         }
@@ -237,6 +342,7 @@ export type Database = {
           unit_price: number
           status?: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned' | null
           notes?: string | null
+          organisation_id?: string
         }
         Update: {
           id?: string
@@ -246,6 +352,7 @@ export type Database = {
           unit_price?: number
           status?: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned' | null
           notes?: string | null
+          organisation_id?: string
         }
         Relationships: [
           {
@@ -260,6 +367,13 @@ export type Database = {
             columns: ['menu_item_id']
             isOneToOne: false
             referencedRelation: 'menu_items'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'order_items_organisation_id_fkey'
+            columns: ['organisation_id']
+            isOneToOne: false
+            referencedRelation: 'organisations'
             referencedColumns: ['id']
           }
         ]
@@ -304,6 +418,43 @@ export type Database = {
           }
         ]
       }
+      impersonation_events: {
+        Row: {
+          id: string
+          superadmin_id: string
+          target_user_id: string
+          action: 'start' | 'stop'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          superadmin_id: string
+          target_user_id: string
+          action: 'start' | 'stop'
+        }
+        Update: {
+          id?: string
+          superadmin_id?: string
+          target_user_id?: string
+          action?: 'start' | 'stop'
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'impersonation_events_superadmin_id_fkey'
+            columns: ['superadmin_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'impersonation_events_target_user_id_fkey'
+            columns: ['target_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -312,7 +463,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: 'admin' | 'crew'
+      user_role: 'admin' | 'crew' | 'superadmin'
       tab_status: 'open' | 'closed'
       order_item_status: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
     }

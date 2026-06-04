@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/shared/page-header'
 import { Scroll, UtensilsCrossed, CheckCheck, Clock, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -7,6 +8,13 @@ import { QUEUE_STATUSES } from '@/lib/order-status'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+
+  // Superadmins have no venue of their own — send them to their console.
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (me?.role === 'superadmin') redirect('/superadmin/organisations')
+  }
 
   const [tabsRes, queueRes, recentRes] = await Promise.all([
     supabase.from('tabs').select('id').eq('status', 'open'),

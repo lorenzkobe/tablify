@@ -11,8 +11,10 @@ export function formatDistanceToNow(dateStr: string): string {
   return `${Math.floor(diffHr / 24)}d ago`
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount)
+// Currency-aware formatter. Defaults to PHP (the original single-tenant
+// behaviour); pass an org's currency to format per-organisation.
+export function formatCurrency(amount: number, currency = 'PHP'): string {
+  return new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(amount)
 }
 
 export function formatTime(dateStr: string): string {

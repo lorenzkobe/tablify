@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/components/shared/sidebar-nav'
+import { ImpersonationBanner } from '@/components/superadmin/impersonation-banner'
+import { IMPERSONATION_COOKIE } from '@/lib/impersonation'
 import { Toaster } from 'sonner'
 import type { Role } from '@/lib/database.types'
 
@@ -19,11 +22,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const role = (profile?.role ?? 'crew') as Role
   const fullName = profile?.full_name ?? ''
 
+  const cookieStore = await cookies()
+  const impersonating = !!cookieStore.get(IMPERSONATION_COOKIE)
+
   return (
     <div className="flex min-h-screen">
       <AppNav role={role} fullName={fullName} />
       {/* pt-14 pb-16 reserve space for mobile top/bottom bars; removed on md+ */}
       <main className="flex-1 overflow-auto pt-14 pb-16 md:pt-0 md:pb-0">
+        {impersonating && <ImpersonationBanner name={fullName} />}
         <div className="max-w-5xl mx-auto">
           {children}
         </div>
