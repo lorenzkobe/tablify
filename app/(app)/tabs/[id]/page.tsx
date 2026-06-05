@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import { ItemStatusBadge } from '@/components/shared/status-badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatTime } from '@/lib/format'
@@ -46,10 +47,7 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: me } = user
-    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
-    : { data: null }
+  const me = await getCurrentProfile()
   const isAdmin = me?.role === 'admin'
 
   const { data: tab } = await supabase

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, Clock } from 'lucide-react'
@@ -13,18 +14,11 @@ export default async function SuperadminOrganisationDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const profile = await getCurrentProfile()
+  if (!profile) redirect('/login')
+  if (profile.role !== 'superadmin') redirect('/dashboard')
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'superadmin') redirect('/dashboard')
-
   const { data: org } = await supabase
     .from('organisations')
     .select('*')
@@ -75,7 +69,7 @@ export default async function SuperadminOrganisationDetailPage({
         organisationId={org.id}
         organisations={orgsRes.data ?? []}
         unassignedUsers={unassignedRes.data ?? []}
-        currentUserId={user.id}
+        currentUserId={profile.id}
       />
     </div>
   )

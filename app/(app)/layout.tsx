@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser, getCurrentProfile } from '@/lib/supabase/auth'
 import { AppNav } from '@/components/shared/sidebar-nav'
 import { ImpersonationBanner } from '@/components/superadmin/impersonation-banner'
 import { IMPERSONATION_COOKIE, isImpersonating } from '@/lib/impersonation'
@@ -8,16 +8,11 @@ import { Toaster } from 'sonner'
 import type { Role } from '@/lib/database.types'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user.id)
-    .single()
+  const profile = await getCurrentProfile()
 
   const role = (profile?.role ?? 'crew') as Role
   const fullName = profile?.full_name ?? ''
@@ -30,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const impersonating = isImpersonating(cookieStore.get(IMPERSONATION_COOKIE)?.value, user.id)
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen">
       <AppNav role={role} fullName={fullName} />
       {/* pt-14 pb-16 reserve space for mobile top/bottom bars; removed on md+ */}
       <main className="flex-1 overflow-auto pt-14 pb-16 md:pt-0 md:pb-0">

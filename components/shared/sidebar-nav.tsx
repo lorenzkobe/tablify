@@ -47,7 +47,7 @@ export function AppNav({ role, fullName }: { role: Role; fullName: string }) {
   return (
     <>
       {/* ── Desktop sidebar ─────────────────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-56 min-h-screen border-r border-border bg-sidebar px-3 py-5 shrink-0">
+      <aside className="hidden md:flex flex-col w-56 h-screen border-r border-border bg-sidebar px-3 py-5 shrink-0">
         <div className="px-2 mb-7">
           <TablifyWordmark />
         </div>

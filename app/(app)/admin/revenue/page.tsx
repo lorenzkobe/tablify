@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/shared/page-header'
 import { RevenueManager } from '@/components/revenue/revenue-manager'
@@ -40,17 +41,9 @@ export default async function RevenuePage({
 }: {
   searchParams: Promise<{ from?: string; to?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  const profile = await getCurrentProfile()
+  if (!profile) redirect('/login')
+  if (profile.role !== 'admin') redirect('/dashboard')
 
   const org = (await getOrganisation()) ?? DEFAULT_ORG
   const today = businessDayNow(org.timezone, org.open_time)

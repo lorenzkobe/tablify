@@ -1,21 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/shared/page-header'
 import { OrganisationManager } from '@/components/superadmin/organisation-manager'
 
 export default async function SuperadminOrganisationsPage() {
+  const profile = await getCurrentProfile()
+  if (!profile) redirect('/login')
+  if (profile.role !== 'superadmin') redirect('/dashboard')
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'superadmin') redirect('/dashboard')
-
   const { data: organisations } = await supabase
     .from('organisations')
     .select('*')

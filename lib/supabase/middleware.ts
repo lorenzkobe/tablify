@@ -37,7 +37,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && !pathname.startsWith('/login')) {
+  // The org-membership guard needs a DB query, so skip it for RSC prefetch
+  // requests — they render nothing the user sees yet, and the real navigation
+  // (which is not a prefetch) will run this check. This avoids a profiles query
+  // on every backgrounded sidebar link prefetch.
+  const isPrefetch = request.headers.get('next-router-prefetch') === '1'
+
+  if (user && !isPrefetch && !pathname.startsWith('/login')) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, organisation_id')

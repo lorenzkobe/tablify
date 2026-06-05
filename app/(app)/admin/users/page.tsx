@@ -1,20 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 import { UserManager } from '@/components/admin/user-manager'
 
 export default async function AdminUsersPage() {
+  const profile = await getCurrentProfile()
+  if (!profile) redirect('/login')
+  if (profile.role !== 'admin') redirect('/dashboard')
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') redirect('/dashboard')
-
   const { data: profiles } = await supabase
     .from('profiles')
     .select('*')
@@ -31,7 +25,7 @@ export default async function AdminUsersPage() {
         </p>
       </div>
 
-      <UserManager users={profiles ?? []} currentUserId={user.id} />
+      <UserManager users={profiles ?? []} currentUserId={profile.id} />
     </div>
   )
 }

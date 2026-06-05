@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import { localMinutes, parseTime } from '@/lib/business-day'
 import type { Organisation } from '@/lib/database.types'
 
@@ -14,18 +15,12 @@ export const DEFAULT_ORG: Pick<Organisation, 'timezone' | 'open_time' | 'close_t
 // The organisation the current caller belongs to (RLS-scoped). null for a
 // superadmin or unauthenticated request.
 export async function getOrganisation(): Promise<Organisation | null> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organisation_id')
-    .eq('id', user.id)
-    .single()
-
+  // Reuses the request-cached profile, so this adds only the organisations
+  // query — no extra auth round-trip or profiles lookup.
+  const profile = await getCurrentProfile()
   if (!profile?.organisation_id) return null
 
+  const supabase = await createClient()
   const { data: org } = await supabase
     .from('organisations')
     .select('*')

@@ -1,20 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser, getCurrentProfile } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 import { ProfileForm } from '@/components/profile/profile-form'
 import { UserCircle } from 'lucide-react'
 import type { Role } from '@/lib/database.types'
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user.id)
-    .single()
-
+  const profile = await getCurrentProfile()
   const fullName = profile?.full_name ?? ''
   const role = (profile?.role ?? 'crew') as Role
 

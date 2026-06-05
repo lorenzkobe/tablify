@@ -1,20 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/shared/page-header'
 import { GlobalUserManager } from '@/components/superadmin/global-user-manager'
 
 export default async function SuperadminUsersPage() {
+  const profile = await getCurrentProfile()
+  if (!profile) redirect('/login')
+  if (profile.role !== 'superadmin') redirect('/dashboard')
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'superadmin') redirect('/dashboard')
 
   // Superadmin RLS lets us read every profile and organisation.
   const [usersRes, orgsRes] = await Promise.all([
@@ -33,7 +28,7 @@ export default async function SuperadminUsersPage() {
       <GlobalUserManager
         users={usersRes.data ?? []}
         organisations={orgsRes.data ?? []}
-        currentUserId={user.id}
+        currentUserId={profile.id}
       />
     </div>
   )
