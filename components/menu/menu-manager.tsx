@@ -16,17 +16,17 @@ import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, EyeOff, Eye, UtensilsCrossed, Tag } from 'lucide-react'
 import { formatCurrency } from '@/lib/format'
 import type { MenuCategory, MenuItem } from '@/lib/database.types'
-import { useRouter } from 'next/navigation'
 
 export function MenuManager({
-  categories,
-  items,
+  categories: initialCategories,
+  items: initialItems,
 }: {
   categories: MenuCategory[]
   items: MenuItem[]
 }) {
-  const router = useRouter()
-  const [activeCategory, setActiveCategory] = useState<string | null>(categories[0]?.id ?? null)
+  const [categories, setCategories] = useState<MenuCategory[]>(initialCategories)
+  const [items, setItems] = useState<MenuItem[]>(initialItems)
+  const [activeCategory, setActiveCategory] = useState<string | null>(initialCategories[0]?.id ?? null)
 
   const [catDialogOpen, setCatDialogOpen] = useState(false)
   const [editingCat, setEditingCat] = useState<MenuCategory | null>(null)
@@ -72,27 +72,37 @@ export function MenuManager({
       ? await updateCategory(editingCat.id, catName)
       : await createCategory(catName)
     setCatLoading(false)
-    if (result.error) { toast.error(result.error); return }
+    if (result.error || !result.data) { toast.error(result.error ?? 'Something went wrong'); return }
+    const saved = result.data
+    if (editingCat) {
+      setCategories((prev) => prev.map((c) => (c.id === saved.id ? saved : c)))
+    } else {
+      setCategories((prev) => [...prev, saved])
+      setActiveCategory(saved.id)
+    }
     toast.success(editingCat ? 'Category updated' : 'Category created')
     setCatDialogOpen(false)
-    router.refresh()
   }
 
   async function runDelete() {
     if (!pendingDelete) return
     if (pendingDelete.type === 'category') {
-      const result = await deleteCategory(pendingDelete.id)
+      const deletedId = pendingDelete.id
+      const result = await deleteCategory(deletedId)
       if (result.error) { toast.error(result.error); throw new Error(result.error) }
-      toast.success('Category deleted')
-      if (activeCategory === pendingDelete.id) {
-        setActiveCategory(categories.find((c) => c.id !== pendingDelete.id)?.id ?? null)
+      setCategories((prev) => prev.filter((c) => c.id !== deletedId))
+      setItems((prev) => prev.filter((i) => i.category_id !== deletedId))
+      if (activeCategory === deletedId) {
+        setActiveCategory(categories.find((c) => c.id !== deletedId)?.id ?? null)
       }
+      toast.success('Category deleted')
     } else {
-      const result = await deleteMenuItem(pendingDelete.id)
+      const deletedId = pendingDelete.id
+      const result = await deleteMenuItem(deletedId)
       if (result.error) { toast.error(result.error); throw new Error(result.error) }
+      setItems((prev) => prev.filter((i) => i.id !== deletedId))
       toast.success('Item deleted')
     }
-    router.refresh()
   }
 
   function openNewItem() {
@@ -126,17 +136,21 @@ export function MenuManager({
       ? await updateMenuItem(editingItem.id, { ...data, price: data.price })
       : await createMenuItem(data)
     setItemLoading(false)
-    if (result.error) { toast.error(result.error); return }
+    if (result.error || !result.data) { toast.error(result.error ?? 'Something went wrong'); return }
+    const saved = result.data
+    setItems((prev) =>
+      editingItem ? prev.map((i) => (i.id === saved.id ? saved : i)) : [...prev, saved],
+    )
     toast.success(editingItem ? 'Item updated' : 'Item created')
     setItemDialogOpen(false)
-    router.refresh()
   }
 
   async function handleToggleAvailability(item: MenuItem) {
     const result = await toggleMenuItemAvailability(item.id, !item.available)
-    if (result.error) { toast.error(result.error); return }
+    if (result.error || !result.data) { toast.error(result.error ?? 'Something went wrong'); return }
+    const saved = result.data
+    setItems((prev) => prev.map((i) => (i.id === saved.id ? saved : i)))
     toast.success(item.available ? 'Item marked unavailable' : 'Item available again')
-    router.refresh()
   }
 
   return (

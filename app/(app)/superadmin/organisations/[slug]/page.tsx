@@ -33,9 +33,10 @@ export default async function SuperadminOrganisationDetailPage({
 
   if (!org) notFound()
 
-  const [membersRes, orgsRes] = await Promise.all([
+  const [membersRes, orgsRes, unassignedRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('organisation_id', org.id).order('created_at'),
     supabase.from('organisations').select('*').order('name'),
+    supabase.from('profiles').select('*').is('organisation_id', null).order('full_name'),
   ])
 
   return (
@@ -73,6 +74,7 @@ export default async function SuperadminOrganisationDetailPage({
         members={membersRes.data ?? []}
         organisationId={org.id}
         organisations={orgsRes.data ?? []}
+        unassignedUsers={unassignedRes.data ?? []}
         currentUserId={user.id}
       />
     </div>

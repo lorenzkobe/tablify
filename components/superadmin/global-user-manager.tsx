@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { assignUserToOrg, setUserRole, signInAsUser } from '@/app/actions/superadmin'
 import { ROLE_CONFIG } from '@/components/admin/user-manager'
 import { Button } from '@/components/ui/button'
@@ -16,7 +15,7 @@ import type { Profile, Organisation } from '@/lib/database.types'
 const UNASSIGNED = '__none__'
 
 export function GlobalUserManager({
-  users,
+  users: initialUsers,
   organisations,
   currentUserId,
 }: {
@@ -24,7 +23,7 @@ export function GlobalUserManager({
   organisations: Organisation[]
   currentUserId: string
 }) {
-  const router = useRouter()
+  const [users, setUsers] = useState<Profile[]>(initialUsers)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [pendingSignIn, setPendingSignIn] = useState<{ id: string; name: string } | null>(null)
 
@@ -35,24 +34,26 @@ export function GlobalUserManager({
     setBusyId(userId)
     const result = await assignUserToOrg(userId, organisationId)
     setBusyId(null)
-    if (result.error) {
-      toast.error(result.error)
+    if (result.error || !result.data) {
+      toast.error(result.error ?? 'Something went wrong')
       return
     }
+    const saved = result.data
+    setUsers((prev) => prev.map((u) => (u.id === saved.id ? saved : u)))
     toast.success('Organisation assigned')
-    router.refresh()
   }
 
   async function changeRole(userId: string, role: 'admin' | 'crew') {
     setBusyId(userId)
     const result = await setUserRole(userId, role)
     setBusyId(null)
-    if (result.error) {
-      toast.error(result.error)
+    if (result.error || !result.data) {
+      toast.error(result.error ?? 'Something went wrong')
       return
     }
+    const saved = result.data
+    setUsers((prev) => prev.map((u) => (u.id === saved.id ? saved : u)))
     toast.success('Role updated')
-    router.refresh()
   }
 
   async function runSignIn() {

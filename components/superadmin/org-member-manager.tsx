@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   assignUserToOrg,
   setUserRole,
@@ -18,22 +17,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { Initials } from '@/components/shared/initials'
 import { toast } from 'sonner'
-import { Eye, Users, Plus, UserMinus } from 'lucide-react'
+import { Eye, Users, Plus, UserMinus, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Profile, Organisation } from '@/lib/database.types'
 
 export function OrgMemberManager({
-  members,
+  members: initialMembers,
   organisationId,
   organisations,
+  unassignedUsers: initialUnassigned,
   currentUserId,
 }: {
   members: Profile[]
   organisationId: string
   organisations: Organisation[]
+  unassignedUsers: Profile[]
   currentUserId: string
 }) {
-  const router = useRouter()
+  const [members, setMembers] = useState<Profile[]>(initialMembers)
+  const [unassignedUsers, setUnassignedUsers] = useState<Profile[]>(initialUnassigned)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [pendingSignIn, setPendingSignIn] = useState<{ id: string; name: string } | null>(null)
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null)
@@ -44,6 +46,10 @@ export function OrgMemberManager({
   const [role, setRole] = useState<'admin' | 'crew'>('crew')
   const [inviting, setInviting] = useState(false)
 
+  const [addOpen, setAddOpen] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [adding, setAdding] = useState(false)
+
   const adminCount = members.filter((m) => m.role === 'admin').length
   const otherOrgs = organisations.filter((o) => o.id !== organisationId)
 
@@ -51,9 +57,10 @@ export function OrgMemberManager({
     setBusyId(userId)
     const result = await setUserRole(userId, next)
     setBusyId(null)
-    if (result.error) return void toast.error(result.error)
+    if (result.error || !result.data) return void toast.error(result.error ?? 'Something went wrong')
+    const saved = result.data
+    setMembers((prev) => prev.map((m) => (m.id === saved.id ? saved : m)))
     toast.success('Role updated')
-    router.refresh()
   }
 
   async function moveToOrg(userId: string, targetOrgId: string) {
@@ -61,16 +68,20 @@ export function OrgMemberManager({
     const result = await assignUserToOrg(userId, targetOrgId)
     setBusyId(null)
     if (result.error) return void toast.error(result.error)
+    // The member now belongs to another org, so they leave this list.
+    setMembers((prev) => prev.filter((m) => m.id !== userId))
     toast.success('Member moved to another organisation')
-    router.refresh()
   }
 
   async function runRemove() {
     if (!pendingRemove) return
     const result = await removeUserFromOrg(pendingRemove.id)
-    if (result.error) { toast.error(result.error); throw new Error(result.error) }
+    if (result.error || !result.data) { const msg = result.error ?? 'Something went wrong'; toast.error(msg); throw new Error(msg) }
+    const removed = result.data
+    setMembers((prev) => prev.filter((m) => m.id !== removed.id))
+    // They're now unassigned, so they become eligible for "Add existing".
+    setUnassignedUsers((prev) => [...prev, removed])
     toast.success(`${pendingRemove.name} removed from this organisation`)
-    router.refresh()
   }
 
   async function runSignIn() {
@@ -89,12 +100,27 @@ export function OrgMemberManager({
     const result = await inviteUserToOrg(email.trim(), fullName.trim(), role, organisationId)
     setInviting(false)
     if (result.error) return void toast.error(result.error)
+    const created = result.data
+    if (created) setMembers((prev) => [...prev, created])
     toast.success(`Invite sent to ${email}`)
     setInviteOpen(false)
     setEmail('')
     setFullName('')
     setRole('crew')
-    router.refresh()
+  }
+
+  async function handleAddExisting() {
+    if (!selectedUserId) return
+    setAdding(true)
+    const result = await assignUserToOrg(selectedUserId, organisationId)
+    setAdding(false)
+    if (result.error || !result.data) return void toast.error(result.error ?? 'Something went wrong')
+    const added = result.data
+    setMembers((prev) => [...prev, added])
+    setUnassignedUsers((prev) => prev.filter((u) => u.id !== added.id))
+    toast.success(`${added.full_name} added to this organisation`)
+    setAddOpen(false)
+    setSelectedUserId('')
   }
 
   return (
@@ -103,10 +129,25 @@ export function OrgMemberManager({
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Members ({members.length}) · {adminCount} admin{adminCount !== 1 ? 's' : ''}
         </p>
-        <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5 min-h-[36px] text-xs">
-          <Plus size={14} />
-          Invite
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setInviteOpen(true)}
+            className="gap-1.5 min-h-[36px] text-xs"
+          >
+            <Plus size={14} />
+            Invite
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setAddOpen(true)}
+            className="gap-1.5 min-h-[36px] text-xs"
+          >
+            <UserPlus size={14} />
+            Add existing
+          </Button>
+        </div>
       </div>
 
       <div className="surface-raised rounded-xl border border-border overflow-hidden divide-y divide-border">
@@ -268,6 +309,58 @@ export function OrgMemberManager({
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-[calc(100%-3rem)] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold tracking-tight">Add existing user</DialogTitle>
+          </DialogHeader>
+          {unassignedUsers.length === 0 ? (
+            <div className="py-8 flex flex-col items-center gap-3 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                <Users size={22} />
+              </div>
+              <p className="text-sm text-muted-foreground px-4">
+                No unassigned users available. Invite a new member instead.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-1">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">User</Label>
+                <Select value={selectedUserId} onValueChange={(val) => setSelectedUserId(val ?? '')}>
+                  <SelectTrigger className="h-10">
+                    <span className="flex-1 text-left truncate">
+                      {selectedUserId
+                        ? unassignedUsers.find((u) => u.id === selectedUserId)?.full_name
+                        : 'Select a user…'}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unassignedUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name} · {ROLE_CONFIG[u.role].label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Only users not assigned to any organisation are shown. They keep their current role.
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" onClick={() => setAddOpen(false)} className="flex-1 h-11">
+                  Cancel
+                </Button>
+                <Button onClick={handleAddExisting} disabled={!selectedUserId || adding} className="flex-1 h-11">
+                  {adding ? 'Adding…' : 'Add to org'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -21,8 +21,9 @@ export const ROLE_CONFIG: Record<Role, { label: string; description: string; col
   crew:  { label: 'Crew',  description: 'Take orders & work the queue',              color: 'text-indigo-500 bg-indigo-500/10', avatarRing: 'ring-indigo-500/30', icon: <Utensils size={13} /> },
 }
 
-export function UserManager({ users, currentUserId }: { users: Profile[]; currentUserId: string }) {
+export function UserManager({ users: initialUsers, currentUserId }: { users: Profile[]; currentUserId: string }) {
   const router = useRouter()
+  const [users, setUsers] = useState<Profile[]>(initialUsers)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
@@ -39,29 +40,33 @@ export function UserManager({ users, currentUserId }: { users: Profile[]; curren
     if (result.error) {
       toast.error(result.error)
     } else {
+      const created = result.data
+      if (created) setUsers((prev) => [...prev, created])
+      else router.refresh()
       toast.success(`Invite sent to ${email}`)
       setInviteOpen(false)
       setEmail('')
       setFullName('')
       setRole('crew')
-      router.refresh()
     }
   }
 
   async function runRoleChange() {
     if (!pendingRole) return
     const result = await updateUserRole(pendingRole.id, pendingRole.role)
-    if (result.error) { toast.error(result.error); throw new Error(result.error) }
+    if (result.error || !result.data) { toast.error(result.error ?? 'Something went wrong'); throw new Error(result.error ?? 'failed') }
+    const saved = result.data
+    setUsers((prev) => prev.map((u) => (u.id === saved.id ? saved : u)))
     toast.success('Role updated')
-    router.refresh()
   }
 
   async function runDelete() {
     if (!pendingDelete) return
-    const result = await deleteUser(pendingDelete.id)
+    const deletedId = pendingDelete.id
+    const result = await deleteUser(deletedId)
     if (result.error) { toast.error(result.error); throw new Error(result.error) }
+    setUsers((prev) => prev.filter((u) => u.id !== deletedId))
     toast.success(`${pendingDelete.name} removed`)
-    router.refresh()
   }
 
   return (

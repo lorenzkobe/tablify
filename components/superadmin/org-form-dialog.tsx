@@ -53,10 +53,14 @@ export function OrgFormDialog({
   open,
   onOpenChange,
   editing,
+  onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   editing: Organisation | null
+  // Receives the saved row so a parent list can update without refetching. When
+  // omitted (e.g. single-org detail header), the form refreshes the route.
+  onSaved?: (org: Organisation) => void
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,13 +72,21 @@ export function OrgFormDialog({
         </DialogHeader>
         {/* Mounts fresh on each open (Radix unmounts closed content), so the
             form initialises from `editing` without a sync effect. */}
-        {open && <OrgForm editing={editing} onClose={() => onOpenChange(false)} />}
+        {open && <OrgForm editing={editing} onClose={() => onOpenChange(false)} onSaved={onSaved} />}
       </DialogContent>
     </Dialog>
   )
 }
 
-function OrgForm({ editing, onClose }: { editing: Organisation | null; onClose: () => void }) {
+function OrgForm({
+  editing,
+  onClose,
+  onSaved,
+}: {
+  editing: Organisation | null
+  onClose: () => void
+  onSaved?: (org: Organisation) => void
+}) {
   const router = useRouter()
   const [form, setForm] = useState<OrgForm>(() => formFor(editing))
   // Until the user overrides it, the toggle tracks the value derived from the
@@ -112,13 +124,14 @@ function OrgForm({ editing, onClose }: { editing: Organisation | null; onClose: 
       ? await updateOrganisation(editing.id, form)
       : await createOrganisation(form)
     setLoading(false)
-    if (result.error) {
-      toast.error(result.error)
+    if (result.error || !result.data) {
+      toast.error(result.error ?? 'Something went wrong')
       return
     }
     toast.success(editing ? 'Organisation updated' : 'Organisation created')
     onClose()
-    router.refresh()
+    if (onSaved) onSaved(result.data)
+    else router.refresh()
   }
 
   return (

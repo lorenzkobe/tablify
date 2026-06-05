@@ -55,7 +55,7 @@ export async function createOrganisation(data: {
   }
 
   const supabase = await createAdminClient()
-  const { error } = await supabase.from('organisations').insert({
+  const { data: created, error } = await supabase.from('organisations').insert({
     name: data.name.trim(),
     slug: slugify(data.name) || crypto.randomUUID().slice(0, 8),
     ...(data.timezone && { timezone: data.timezone }),
@@ -64,10 +64,12 @@ export async function createOrganisation(data: {
     ...(data.closesNextDay !== undefined && { closes_next_day: data.closesNextDay }),
     ...(data.currency && { currency: data.currency }),
   })
+    .select()
+    .single()
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/organisations')
-  return {}
+  return { data: created }
 }
 
 export async function updateOrganisation(
@@ -94,7 +96,7 @@ export async function updateOrganisation(
   }
 
   const supabase = await createAdminClient()
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('organisations')
     .update({
       ...(data.name !== undefined && { name: data.name.trim() }),
@@ -105,10 +107,12 @@ export async function updateOrganisation(
       ...(data.currency !== undefined && { currency: data.currency }),
     })
     .eq('id', id)
+    .select()
+    .single()
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/organisations')
-  return {}
+  return { data: updated }
 }
 
 // Permanently delete an organisation. The FKs are configured so this cascade-
@@ -123,7 +127,7 @@ export async function deleteOrganisation(id: string) {
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/organisations')
-  return {}
+  return { data: { id } }
 }
 
 export async function assignUserToOrg(userId: string, organisationId: string) {
@@ -131,15 +135,17 @@ export async function assignUserToOrg(userId: string, organisationId: string) {
   if ('error' in guard) return { error: guard.error }
 
   const supabase = await createAdminClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .update({ organisation_id: organisationId })
     .eq('id', userId)
+    .select()
+    .single()
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
   revalidatePath('/superadmin/organisations/[slug]', 'page')
-  return {}
+  return { data }
 }
 
 // Remove a user from their organisation, leaving them unassigned.
@@ -148,15 +154,17 @@ export async function removeUserFromOrg(userId: string) {
   if ('error' in guard) return { error: guard.error }
 
   const supabase = await createAdminClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .update({ organisation_id: null })
     .eq('id', userId)
+    .select()
+    .single()
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
   revalidatePath('/superadmin/organisations/[slug]', 'page')
-  return {}
+  return { data }
 }
 
 // Invite a brand-new user straight into a specific organisation. Unlike the
@@ -172,14 +180,23 @@ export async function inviteUserToOrg(
   if ('error' in guard) return { error: guard.error }
 
   const supabase = await createAdminClient()
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+  const { data: invited, error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName, role, organisation_id: organisationId },
   })
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
   revalidatePath('/superadmin/organisations/[slug]', 'page')
-  return {}
+
+  // The handle_new_user trigger creates the profiles row on the auth insert
+  // above; read it back so the caller can update the UI without refetching.
+  const { data: created } = await supabase
+    .from('profiles')
+    .select()
+    .eq('id', invited.user.id)
+    .single()
+
+  return { data: created }
 }
 
 // Set a user's org-level role. Superadmin can never be assigned via the UI.
@@ -188,12 +205,17 @@ export async function setUserRole(userId: string, role: 'admin' | 'crew') {
   if ('error' in guard) return { error: guard.error }
 
   const supabase = await createAdminClient()
-  const { error } = await supabase.from('profiles').update({ role }).eq('id', userId)
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId)
+    .select()
+    .single()
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
   revalidatePath('/superadmin/organisations/[slug]', 'page')
-  return {}
+  return { data }
 }
 
 // "Sign in as" — full act-as. Stashes the superadmin's session in an HttpOnly

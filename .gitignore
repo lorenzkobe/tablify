@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Superpowers brainstorm companion
 .superpowers/
+
+# AI Files
+.claude

@@ -20,28 +20,40 @@ export async function inviteUser(email: string, fullName: string, role: Role) {
 
   const supabase = await createAdminClient()
 
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+  const { data: invited, error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName, role, organisation_id: profile.organisation_id },
   })
 
   if (error) return { error: error.message }
 
   revalidatePath('/admin/users')
-  return {}
+
+  // The profiles row is created by the handle_new_user trigger on the auth
+  // insert above, so it already exists — read it back to update the UI without
+  // refetching the whole list.
+  const { data: created } = await supabase
+    .from('profiles')
+    .select()
+    .eq('id', invited.user.id)
+    .single()
+
+  return { data: created }
 }
 
 export async function updateUserRole(userId: string, role: Role) {
   const supabase = await createAdminClient()
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .update({ role })
     .eq('id', userId)
+    .select()
+    .single()
 
   if (error) return { error: error.message }
 
   revalidatePath('/admin/users')
-  return {}
+  return { data }
 }
 
 export async function deleteUser(userId: string) {
@@ -51,5 +63,5 @@ export async function deleteUser(userId: string) {
   if (error) return { error: error.message }
 
   revalidatePath('/admin/users')
-  return {}
+  return { data: { id: userId } }
 }

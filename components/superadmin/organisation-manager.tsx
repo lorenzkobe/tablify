@@ -8,7 +8,12 @@ import { Plus, Building2, Pencil, Clock, ChevronRight } from 'lucide-react'
 import { formatClock } from '@/lib/format'
 import type { Organisation } from '@/lib/database.types'
 
-export function OrganisationManager({ organisations }: { organisations: Organisation[] }) {
+export function OrganisationManager({
+  organisations: initialOrganisations,
+}: {
+  organisations: Organisation[]
+}) {
+  const [organisations, setOrganisations] = useState<Organisation[]>(initialOrganisations)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Organisation | null>(null)
 
@@ -20,6 +25,14 @@ export function OrganisationManager({ organisations }: { organisations: Organisa
   function openEdit(org: Organisation) {
     setEditing(org)
     setOpen(true)
+  }
+
+  function handleSaved(saved: Organisation) {
+    setOrganisations((prev) =>
+      prev.some((o) => o.id === saved.id)
+        ? prev.map((o) => (o.id === saved.id ? saved : o))
+        : [...prev, saved],
+    )
   }
 
   return (
@@ -91,7 +104,7 @@ export function OrganisationManager({ organisations }: { organisations: Organisa
         )}
       </div>
 
-      <OrgFormDialog open={open} onOpenChange={setOpen} editing={editing} />
+      <OrgFormDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={handleSaved} />
     </div>
   )
 }
