@@ -20,7 +20,7 @@ export default async function AdminSettingsPage() {
   const org = await getOrganisation()
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-md mx-auto space-y-6">
       <PageHeader title="Settings" description="Your organisation's details and trading hours" />
       {org ? (
         <OrgSettingsForm organisation={org} />

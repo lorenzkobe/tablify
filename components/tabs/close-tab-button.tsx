@@ -9,7 +9,23 @@ import { AlertTriangle, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/format'
 import { toast } from 'sonner'
 
-export function CloseTabButton({ tabId, tabName, total }: { tabId: string; tabName: string; total?: number }) {
+export interface BillLine {
+  name: string
+  quantity: number
+  lineTotal: number
+}
+
+export function CloseTabButton({
+  tabId,
+  tabName,
+  total,
+  lines = [],
+}: {
+  tabId: string
+  tabName: string
+  total?: number
+  lines?: BillLine[]
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -23,6 +39,10 @@ export function CloseTabButton({ tabId, tabName, total }: { tabId: string; tabNa
 
     if (result.error) {
       toast.error(result.error)
+    } else if (result.deleted) {
+      toast.success('Empty tab deleted')
+      setOpen(false)
+      router.push('/tabs')
     } else {
       toast.success('Tab closed')
       setOpen(false)
@@ -52,17 +72,44 @@ export function CloseTabButton({ tabId, tabName, total }: { tabId: string; tabNa
             </div>
             <DialogDescription className="text-sm text-muted-foreground mt-2 ml-12">
               {hasBalance
-                ? `Tab has an outstanding balance of ${formatCurrency(total!)}. Collect payment before closing.`
-                : 'This will mark the tab as closed. This cannot be undone.'}
+                ? 'Check the bill below, then collect payment before settling.'
+                : 'This tab is empty and will be permanently deleted. This cannot be undone.'}
             </DialogDescription>
           </div>
+
+          {hasBalance && (
+            <div className="px-6 pt-5 pb-1">
+              <div className="surface-raised rounded-lg px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">
+                  {tabName}
+                </p>
+                <ul className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  {lines.map((line) => (
+                    <li key={line.name} className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="min-w-0">
+                        <span className="tabular-nums text-muted-foreground">{line.quantity}×</span>{' '}
+                        <span className="font-medium">{line.name}</span>
+                      </span>
+                      <span className="tabular-nums shrink-0">{formatCurrency(line.lineTotal)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 pt-3 border-t border-border flex items-baseline justify-between">
+                  <span className="text-sm font-semibold tracking-tight">Total</span>
+                  <span className="text-base font-bold tabular-nums tracking-tight">
+                    {formatCurrency(total!)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="px-6 pt-5 pb-6 flex gap-2">
             <Button variant="outline" onClick={() => setOpen(false)} className="flex-1 min-h-[44px]">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleClose} disabled={loading} className="flex-1 min-h-[44px]">
-              {loading ? 'Closing…' : 'Close Tab'}
+            <Button variant={hasBalance ? 'default' : 'destructive'} onClick={handleClose} disabled={loading} className="flex-1 min-h-[44px]">
+              {loading ? (hasBalance ? 'Settling…' : 'Deleting…') : hasBalance ? 'Close & Settle' : 'Delete Tab'}
             </Button>
           </div>
         </DialogContent>

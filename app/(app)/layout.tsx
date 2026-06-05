@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/components/shared/sidebar-nav'
 import { ImpersonationBanner } from '@/components/superadmin/impersonation-banner'
-import { IMPERSONATION_COOKIE } from '@/lib/impersonation'
+import { IMPERSONATION_COOKIE, isImpersonating } from '@/lib/impersonation'
 import { Toaster } from 'sonner'
 import type { Role } from '@/lib/database.types'
 
@@ -22,20 +22,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const role = (profile?.role ?? 'crew') as Role
   const fullName = profile?.full_name ?? ''
 
-  // The DB row is the source of truth; the cookie is only a secondary gate.
-  // A stale cookie with no matching row never shows the banner.
+  // The HttpOnly cookie is the authoritative signal for the current session —
+  // it's deleted on both stopImpersonating() and logout(), so it can't go
+  // stale across a re-login. (active_impersonations remains the cross-session
+  // audit record but isn't needed to gate this banner.)
   const cookieStore = await cookies()
-  const stashRaw = cookieStore.get(IMPERSONATION_COOKIE)?.value
-  let impersonating = false
-  if (stashRaw) {
-    const admin = await createAdminClient()
-    const { data: activeRow } = await admin
-      .from('active_impersonations')
-      .select('superadmin_id')
-      .eq('target_user_id', user.id)
-      .maybeSingle()
-    impersonating = !!activeRow
-  }
+  const impersonating = isImpersonating(cookieStore.get(IMPERSONATION_COOKIE)?.value, user.id)
 
   return (
     <div className="flex min-h-screen">

@@ -81,7 +81,7 @@ export function ProfileForm({
   }
 
   return (
-    <div className="surface-raised rounded-xl border border-border bg-card p-5 sm:p-6 space-y-6 max-w-2xl mx-auto">
+    <div className="surface-raised rounded-xl border border-border bg-card p-5 sm:p-6 space-y-6">
       {/* Identity header */}
       <div className="flex items-center gap-4">
         <Initials name={fullName || initialName} className={cn('w-14 h-14 text-base ring-2', roleConfig.avatarRing)} />

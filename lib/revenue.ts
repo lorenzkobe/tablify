@@ -1,5 +1,5 @@
 import type { OrderItemStatus } from './database.types'
-import { businessDay } from './business-day'
+import { businessDay, parseTime, localMinutes } from './business-day'
 
 // A flattened order-item row used for revenue reporting. The page normalises
 // the nested Supabase query result into this shape before aggregating.
@@ -27,6 +27,9 @@ export interface RevenueSummary {
   perDay: Array<{ day: string; revenue: number; billCount: number }>
   topItems: RevenueRank[]
   topCategories: RevenueRank[]
+  itemsPerBill: number
+  busiestDay: { day: string; billCount: number } | null
+  perHour: Array<{ hour: number; revenue: number; quantity: number }>
 }
 
 // Canonical revenue rule: quantity * unit_price, excluding returned items.
@@ -56,6 +59,7 @@ export function aggregateRevenue(
   const items = new Map<string, RevenueRank>()
   const categories = new Map<string, RevenueRank>()
   const bills = new Set<string>()
+  const perHour = new Map<number, { revenue: number; quantity: number }>()
 
   let total = 0
   let itemCount = 0
@@ -70,6 +74,12 @@ export function aggregateRevenue(
     total += value
     itemCount += row.quantity
     if (row.tab_id) bills.add(row.tab_id)
+
+    const hour = Math.floor(localMinutes(row.created_at, timezone) / 60)
+    const hourBucket = perHour.get(hour) ?? { revenue: 0, quantity: 0 }
+    hourBucket.revenue += value
+    hourBucket.quantity += row.quantity
+    perHour.set(hour, hourBucket)
 
     const dayBucket = perDay.get(day) ?? { revenue: 0, tabs: new Set<string>() }
     dayBucket.revenue += value
@@ -87,15 +97,32 @@ export function aggregateRevenue(
     categories.set(row.category_name, cat)
   }
 
+  const perDayArr = [...perDay.entries()]
+    .map(([day, b]) => ({ day, revenue: b.revenue, billCount: b.tabs.size }))
+    .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))
+
+  let busiestDay: { day: string; billCount: number } | null = null
+  for (const entry of perDayArr) {
+    if (!busiestDay || entry.billCount > busiestDay.billCount) {
+      busiestDay = { day: entry.day, billCount: entry.billCount }
+    }
+  }
+
+  const openHour = Math.floor(parseTime(openTime) / 60)
+  const perHourArr = [...perHour.entries()]
+    .map(([hour, b]) => ({ hour, revenue: b.revenue, quantity: b.quantity }))
+    .sort((a, b) => ((a.hour - openHour + 24) % 24) - ((b.hour - openHour + 24) % 24))
+
   return {
     total,
     itemCount,
     billCount: bills.size,
     averageBill: bills.size ? total / bills.size : 0,
-    perDay: [...perDay.entries()]
-      .map(([day, b]) => ({ day, revenue: b.revenue, billCount: b.tabs.size }))
-      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0)),
+    perDay: perDayArr,
     topItems: rank(items),
     topCategories: rank(categories),
+    itemsPerBill: bills.size ? itemCount / bills.size : 0,
+    busiestDay,
+    perHour: perHourArr,
   }
 }

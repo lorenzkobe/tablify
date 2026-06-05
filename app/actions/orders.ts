@@ -53,42 +53,44 @@ export async function createOrder(data: {
   return { orderId: order.id }
 }
 
-// Advance or revert a single item's status (one step), recording who did it.
-export async function updateItemStatus(itemId: string, toStatus: OrderItemStatus) {
+// Advance a batch of items that share the same current status (one step each),
+// recording who did it. Used by the Queue's per-status bulk buttons.
+export async function updateItemsStatus(itemIds: string[], toStatus: OrderItemStatus) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
+  if (itemIds.length === 0) return { error: 'No items selected' }
 
   const { data: current, error: readError } = await supabase
     .from('order_items')
-    .select('status')
-    .eq('id', itemId)
-    .single()
+    .select('id, status')
+    .in('id', itemIds)
 
-  if (readError || !current) return { error: readError?.message ?? 'Item not found' }
+  if (readError || !current) return { error: readError?.message ?? 'Items not found' }
 
-  const fromStatus = current.status
-  if (!isValidTransition(fromStatus, toStatus)) {
-    return { error: 'Invalid status change' }
-  }
+  const valid = current.filter((item) => isValidTransition(item.status, toStatus))
+  if (valid.length === 0) return { error: 'Invalid status change' }
 
+  const validIds = valid.map((item) => item.id)
   const { error } = await supabase
     .from('order_items')
     .update({ status: toStatus })
-    .eq('id', itemId)
+    .in('id', validIds)
 
   if (error) return { error: error.message }
 
-  await supabase.from('status_events').insert({
-    order_item_id: itemId,
-    from_status: fromStatus,
-    to_status: toStatus,
-    actor: user.id,
-  })
+  await supabase.from('status_events').insert(
+    valid.map((item) => ({
+      order_item_id: item.id,
+      from_status: item.status,
+      to_status: toStatus,
+      actor: user.id,
+    }))
+  )
 
   revalidatePath('/queue')
   revalidatePath('/tabs')
   revalidatePath('/dashboard')
 
-  return {}
+  return { updatedIds: validIds }
 }

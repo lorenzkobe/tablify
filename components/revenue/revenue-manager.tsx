@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { addDays } from '@/lib/business-day'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { RevenueDataSkeleton } from '@/components/revenue/revenue-skeleton'
 
 type Preset = 'today' | 'yesterday' | 'last7' | 'month' | 'custom'
 
@@ -40,69 +41,86 @@ function detectPreset(from: string, to: string, today: string): Preset {
   return 'custom'
 }
 
-export function RevenueManager({ today, from, to }: { today: string; from: string; to: string }) {
+export function RevenueManager({
+  today,
+  from,
+  to,
+  children,
+}: {
+  today: string
+  from: string
+  to: string
+  children: ReactNode
+}) {
   const router = useRouter()
-  const active = detectPreset(from, to, today)
+  const [isPending, startTransition] = useTransition()
+  const [mode, setMode] = useState<Preset>(detectPreset(from, to, today))
   const [customFrom, setCustomFrom] = useState(from)
   const [customTo, setCustomTo] = useState(to)
 
   function go(f: string, t: string) {
-    router.push(`/admin/revenue?from=${f}&to=${t}`)
+    if (f === from && t === to) return
+    startTransition(() => {
+      router.push(`/admin/revenue?from=${f}&to=${t}`)
+    })
   }
 
   function onPreset(value: string | null) {
-    if (!value || value === 'custom') return
+    if (!value) return
+    setMode(value as Preset)
+    if (value === 'custom') return
     const r = presetRange(value as Exclude<Preset, 'custom'>, today)
     go(r.from, r.to)
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="space-y-1.5">
+    <div className="space-y-6">
+      <div className="grid grid-flow-col auto-cols-max grid-rows-[auto_auto] items-end gap-x-3 gap-y-2">
         <label className="text-xs font-medium text-muted-foreground">Range</label>
-        <Select value={active} onValueChange={onPreset}>
-          <SelectTrigger className="w-[10rem] h-10 text-sm">
-            <span className="flex-1 text-left">{PRESET_LABELS[active]}</span>
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(PRESET_LABELS) as Preset[]).map((p) => (
-              <SelectItem key={p} value={p}>{PRESET_LABELS[p]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Select value={mode} onValueChange={onPreset}>
+        <SelectTrigger style={{ height: '2.5rem' }} className="w-[11rem] text-sm">
+          <span className="min-w-0 flex-1 truncate text-left">{PRESET_LABELS[mode]}</span>
+        </SelectTrigger>
+        <SelectContent>
+          {(Object.keys(PRESET_LABELS) as Preset[]).map((p) => (
+            <SelectItem key={p} value={p}>{PRESET_LABELS[p]}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      {active === 'custom' && (
+      {mode === 'custom' && (
         <>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">From</label>
-            <Input
-              type="date"
-              value={customFrom}
-              max={customTo || today}
-              onChange={(e) => setCustomFrom(e.target.value)}
-              className="h-10 w-[9.5rem]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">To</label>
-            <Input
-              type="date"
-              value={customTo}
-              min={customFrom}
-              onChange={(e) => setCustomTo(e.target.value)}
-              className="h-10 w-[9.5rem]"
-            />
-          </div>
+          <label className="text-xs font-medium text-muted-foreground">From</label>
+          <Input
+            type="date"
+            value={customFrom}
+            max={customTo || today}
+            onChange={(e) => setCustomFrom(e.target.value)}
+            style={{ height: '2.5rem' }}
+            className="w-[9.5rem]"
+          />
+          <label className="text-xs font-medium text-muted-foreground">To</label>
+          <Input
+            type="date"
+            value={customTo}
+            min={customFrom}
+            onChange={(e) => setCustomTo(e.target.value)}
+            style={{ height: '2.5rem' }}
+            className="w-[9.5rem]"
+          />
+          <span aria-hidden="true" />
           <Button
             onClick={() => customFrom && customTo && go(customFrom, customTo)}
             disabled={!customFrom || !customTo || customTo < customFrom}
-            className="h-10"
+            style={{ height: '2.5rem' }}
           >
             Apply
           </Button>
         </>
       )}
+      </div>
+
+      {isPending ? <RevenueDataSkeleton /> : children}
     </div>
   )
 }

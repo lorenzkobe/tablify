@@ -12,3 +12,21 @@ export interface ImpersonationStash {
   superadmin_id: string
   target_user_id: string
 }
+
+// Whether the current session is a live impersonation of `currentUserId`.
+// The HttpOnly cookie is the authoritative signal: it is set by signInAsUser
+// and deleted on both stopImpersonating() and logout(), so it can never go
+// stale across a re-login. Validating the stashed target against the current
+// user ensures the banner only shows in the impersonated session itself.
+export function isImpersonating(
+  stashRaw: string | undefined,
+  currentUserId: string,
+): boolean {
+  if (!stashRaw) return false
+  try {
+    const stash = JSON.parse(stashRaw) as ImpersonationStash
+    return stash.target_user_id === currentUserId
+  } catch {
+    return false
+  }
+}

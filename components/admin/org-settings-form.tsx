@@ -66,7 +66,7 @@ export function OrgSettingsForm({ organisation }: { organisation: Organisation }
   }
 
   return (
-    <div className="surface-raised rounded-xl border border-border bg-card p-5 space-y-4 max-w-md">
+    <div className="surface-raised rounded-xl border border-border bg-card p-5 space-y-4">
       <div className="space-y-2">
         <Label htmlFor="org-name" className="text-sm font-medium">Name</Label>
         <Input

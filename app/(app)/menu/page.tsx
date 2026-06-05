@@ -17,7 +17,7 @@ export default async function MenuPage() {
   if (profile?.role !== 'admin') redirect('/dashboard')
 
   const [categoriesRes, itemsRes] = await Promise.all([
-    supabase.from('menu_categories').select('*').order('sort'),
+    supabase.from('menu_categories').select('*').order('name'),
     supabase.from('menu_items').select('*').order('sort'),
   ])
 

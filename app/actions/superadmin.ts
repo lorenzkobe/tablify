@@ -275,18 +275,21 @@ export async function signInAsUser(userId: string) {
     return { error: verifyError.message }
   }
 
-  // Record the live impersonation — the authoritative state that gates the
-  // banner (the cookie only holds the restore tokens).
-  await admin.from('active_impersonations').upsert({
+  // Record the live impersonation and audit event. These are best-effort (the
+  // cookie already gates the banner), but log failures rather than swallowing
+  // them — a silently-failing write here is how the banner regression hid.
+  const { error: activeError } = await admin.from('active_impersonations').upsert({
     superadmin_id: superadmin.id,
     target_user_id: userId,
   })
+  if (activeError) console.error('signInAsUser: active_impersonations upsert failed', activeError)
 
-  await admin.from('impersonation_events').insert({
+  const { error: eventError } = await admin.from('impersonation_events').insert({
     superadmin_id: superadmin.id,
     target_user_id: userId,
     action: 'start',
   })
+  if (eventError) console.error('signInAsUser: impersonation_events insert failed', eventError)
 
   redirect('/dashboard')
 }
@@ -308,16 +311,18 @@ export async function stopImpersonating() {
   cookieStore.delete(IMPERSONATION_COOKIE)
 
   const admin = await createAdminClient()
-  await admin
+  const { error: deleteError } = await admin
     .from('active_impersonations')
     .delete()
     .eq('superadmin_id', stash.superadmin_id)
+  if (deleteError) console.error('stopImpersonating: active_impersonations delete failed', deleteError)
 
-  await admin.from('impersonation_events').insert({
+  const { error: eventError } = await admin.from('impersonation_events').insert({
     superadmin_id: stash.superadmin_id,
     target_user_id: stash.target_user_id,
     action: 'stop',
   })
+  if (eventError) console.error('stopImpersonating: impersonation_events insert failed', eventError)
 
   redirect('/superadmin/users')
 }

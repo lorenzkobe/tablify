@@ -1,13 +1,20 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/shared/page-header'
 import { RevenueManager } from '@/components/revenue/revenue-manager'
+import { RevenueDataSkeleton } from '@/components/revenue/revenue-skeleton'
 import { getOrganisation, DEFAULT_ORG } from '@/lib/organisation'
 import { businessDayNow, rangeToUtcBounds } from '@/lib/business-day'
 import { aggregateRevenue, type RevenueRow } from '@/lib/revenue'
 import { formatCurrency } from '@/lib/format'
-import { Scroll, Receipt, TrendingUp, Package } from 'lucide-react'
-import type { OrderItemStatus } from '@/lib/database.types'
+import { RevenueTrendChart } from '@/components/revenue/revenue-trend-chart'
+import { PeakHoursChart } from '@/components/revenue/peak-hours-chart'
+import { ItemDemandChart } from '@/components/revenue/item-demand-chart'
+import { CategoryShareChart } from '@/components/revenue/category-share-chart'
+import { ItemStatsTable } from '@/components/revenue/item-stats-table'
+import { Scroll, Receipt, TrendingUp, Package, Layers, CalendarDays } from 'lucide-react'
+import type { OrderItemStatus, Organisation } from '@/lib/database.types'
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -52,6 +59,33 @@ export default async function RevenuePage({
   const startDay = sp.from && DAY_RE.test(sp.from) ? sp.from : today
   const endDay = sp.to && DAY_RE.test(sp.to) && sp.to >= startDay ? sp.to : startDay
 
+  const rangeLabel =
+    startDay === endDay ? formatDay(startDay) : `${formatDay(startDay)} – ${formatDay(endDay)}`
+
+  return (
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+      <PageHeader title="Revenue" description={rangeLabel} />
+
+      <RevenueManager today={today} from={startDay} to={endDay}>
+        {/* Keyed on the range so the skeleton re-shows on every range change */}
+        <Suspense key={`${startDay}:${endDay}`} fallback={<RevenueDataSkeleton />}>
+          <RevenueData org={org} startDay={startDay} endDay={endDay} />
+        </Suspense>
+      </RevenueManager>
+    </div>
+  )
+}
+
+async function RevenueData({
+  org,
+  startDay,
+  endDay,
+}: {
+  org: Pick<Organisation, 'timezone' | 'open_time' | 'currency'>
+  startDay: string
+  endDay: string
+}) {
+  const supabase = await createClient()
   const { startUtc, endUtc } = rangeToUtcBounds(startDay, endDay)
 
   const { data } = await supabase
@@ -82,26 +116,20 @@ export default async function RevenuePage({
   })
 
   const currency = org.currency
-  const maxDay = Math.max(1, ...summary.perDay.map((d) => d.revenue))
-
-  const rangeLabel =
-    startDay === endDay ? formatDay(startDay) : `${formatDay(startDay)} – ${formatDay(endDay)}`
 
   const stats = [
     { label: 'Revenue', value: formatCurrency(summary.total, currency), icon: TrendingUp, accent: 'bg-primary/10 text-primary' },
     { label: 'Bills', value: String(summary.billCount), icon: Receipt, accent: 'bg-muted text-muted-foreground' },
     { label: 'Avg Bill', value: formatCurrency(summary.averageBill, currency), icon: Scroll, accent: 'bg-muted text-muted-foreground' },
     { label: 'Items Sold', value: String(summary.itemCount), icon: Package, accent: 'bg-muted text-muted-foreground' },
+    { label: 'Avg Items/Bill', value: summary.itemsPerBill.toFixed(1), icon: Layers, accent: 'bg-muted text-muted-foreground' },
+    { label: 'Busiest Day', value: summary.busiestDay ? formatDay(summary.busiestDay.day) : '—', icon: CalendarDays, accent: 'bg-muted text-muted-foreground' },
   ]
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
-      <PageHeader title="Revenue" description={rangeLabel} />
-
-      <RevenueManager today={today} from={startDay} to={endDay} />
-
+    <div className="space-y-6">
       {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {stats.map((s) => (
           <div key={s.label} className="surface-raised rounded-xl border border-border bg-card p-4">
             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${s.accent}`}>
@@ -120,34 +148,25 @@ export default async function RevenuePage({
         </div>
       ) : (
         <>
-          {/* Per business day */}
-          {summary.perDay.length > 1 && (
-            <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                By business day
-              </h2>
-              <div className="space-y-2">
-                {summary.perDay.map((d) => (
-                  <div key={d.day} className="flex items-center gap-3">
-                    <span className="w-24 shrink-0 text-xs text-muted-foreground">{formatDay(d.day)}</span>
-                    <div className="flex-1 h-7 rounded-md bg-primary/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-md bg-primary/60"
-                        style={{ width: `${Math.max(4, (d.revenue / maxDay) * 100)}%` }}
-                      />
-                    </div>
-                    <span className="w-24 shrink-0 text-right text-xs font-medium tabular-nums">
-                      {formatCurrency(d.revenue, currency)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
+          {/* Revenue over time */}
+          {summary.perDay.length > 0 && (
+            <RevenueTrendChart data={summary.perDay} currency={currency} />
           )}
 
-          {/* Top items + categories */}
+          {/* Peak hours */}
+          {summary.perHour.length > 0 && (
+            <PeakHoursChart data={summary.perHour} currency={currency} />
+          )}
+
+          {/* Demand + category share */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ItemDemandChart items={summary.topItems} />
+            <CategoryShareChart data={summary.topCategories} currency={currency} />
+          </div>
+
+          {/* Detailed item stats + top categories */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <RankList title="Top items" rows={summary.topItems.slice(0, 8)} currency={currency} />
+            <ItemStatsTable items={summary.topItems} total={summary.total} currency={currency} />
             <RankList title="Top categories" rows={summary.topCategories.slice(0, 8)} currency={currency} />
           </div>
         </>

@@ -14,11 +14,14 @@ export async function logout() {
     try {
       const stash = JSON.parse(raw) as ImpersonationStash
       const admin = await createAdminClient()
-      await admin
+      const { error } = await admin
         .from('active_impersonations')
         .delete()
         .eq('superadmin_id', stash.superadmin_id)
-    } catch {}
+      if (error) console.error('logout: active_impersonations delete failed', error)
+    } catch (err) {
+      console.error('logout: failed to clear impersonation state', err)
+    }
     cookieStore.delete(IMPERSONATION_COOKIE)
   }
 

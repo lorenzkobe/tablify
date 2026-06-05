@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   createCategory, updateCategory, deleteCategory,
   createMenuItem, updateMenuItem, deleteMenuItem, toggleMenuItemAvailability
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { Combobox } from '@/components/ui/combobox'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, EyeOff, Eye, UtensilsCrossed, Tag } from 'lucide-react'
@@ -46,6 +47,11 @@ export function MenuManager({
     | { type: 'item'; id: string; name: string }
     | null
   >(null)
+
+  const sortedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
+    [categories],
+  )
 
   const filteredItems = activeCategory
     ? items.filter((i) => i.category_id === activeCategory)
@@ -99,7 +105,17 @@ export function MenuManager({
     } else {
       const deletedId = pendingDelete.id
       const result = await deleteMenuItem(deletedId)
-      if (result.error) { toast.error(result.error); throw new Error(result.error) }
+      if (result.error) {
+        if (result.code === 'in_use') {
+          const item = items.find((i) => i.id === deletedId)
+          toast.error(result.error, item?.available ? {
+            action: { label: 'Mark unavailable', onClick: () => handleToggleAvailability(item) },
+          } : undefined)
+        } else {
+          toast.error(result.error)
+        }
+        throw new Error(result.error)
+      }
       setItems((prev) => prev.filter((i) => i.id !== deletedId))
       toast.success('Item deleted')
     }
@@ -203,7 +219,7 @@ export function MenuManager({
                 </span>
               </SelectTrigger>
               <SelectContent>
-                {categories.map((cat) => (
+                {sortedCategories.map((cat) => (
                   <SelectItem
                     key={cat.id}
                     value={cat.id}
@@ -251,7 +267,7 @@ export function MenuManager({
         </div>
 
         <nav className="space-y-0.5">
-          {categories.map((cat) => {
+          {sortedCategories.map((cat) => {
             const count = items.filter((i) => i.category_id === cat.id).length
             const active = activeCategory === cat.id
             return (
@@ -481,21 +497,16 @@ export function MenuManager({
           </DialogHeader>
           <div className="space-y-4 pt-1 pb-2">
             <div className="space-y-2">
-              <Label>Category</Label>
-              <Select value={itemCategory} onValueChange={(v) => setItemCategory(v ?? '')}>
-                <SelectTrigger className="w-full h-11">
-                  <span className="flex-1 text-left text-sm truncate">
-                    {categories.find(c => c.id === itemCategory)?.name ?? (
-                      <span className="text-muted-foreground">Select category</span>
-                    )}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="item-category">Category</Label>
+              <Combobox
+                id="item-category"
+                items={sortedCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                value={itemCategory}
+                onValueChange={setItemCategory}
+                placeholder="Select category"
+                searchPlaceholder="Search categories…"
+                emptyText="No categories found."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="item-name">Name</Label>

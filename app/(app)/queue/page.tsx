@@ -15,7 +15,7 @@ export default async function QueuePage() {
         id,
         notes,
         created_at,
-        tabs(name)
+        tabs(id, name)
       )
     `)
     .in('status', QUEUE_STATUSES)

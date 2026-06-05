@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getOrganisation, isOrgOpenNow } from '@/lib/organisation'
+import type { OrderItemStatus } from '@/lib/database.types'
 
 export async function createTab(name: string) {
   const supabase = await createClient()
@@ -43,6 +44,34 @@ export async function closeTab(tabId: string) {
     return { error: 'Only an admin can close a bill' }
   }
 
+  // Authoritative balance: sum of non-returned line items across the tab's rounds.
+  const { data: rounds } = await supabase
+    .from('orders')
+    .select('order_items(quantity, unit_price, status)')
+    .eq('tab_id', tabId)
+
+  const balance = (rounds ?? []).reduce((sum, round) => {
+    const items = (round.order_items ?? []) as { quantity: number; unit_price: number; status: OrderItemStatus }[]
+    return sum + items.reduce((s, i) => (i.status === 'returned' ? s : s + i.quantity * i.unit_price), 0)
+  }, 0)
+
+  // An empty (zero-balance) tab leaves no bill behind — hard delete it instead of
+  // littering the list with closed shells. orders.tab_id is ON DELETE SET NULL and
+  // orders require a location, so the child rounds must be removed first (which
+  // cascades to order_items and status_events).
+  if (balance === 0) {
+    const { error: roundsError } = await supabase.from('orders').delete().eq('tab_id', tabId)
+    if (roundsError) return { error: roundsError.message }
+
+    const { error: tabError } = await supabase.from('tabs').delete().eq('id', tabId)
+    if (tabError) return { error: tabError.message }
+
+    revalidatePath('/tabs')
+    revalidatePath('/dashboard')
+
+    return { deleted: true }
+  }
+
   const { error } = await supabase
     .from('tabs')
     .update({ status: 'closed', closed_at: new Date().toISOString() })
@@ -53,5 +82,5 @@ export async function closeTab(tabId: string) {
   revalidatePath('/tabs')
   revalidatePath('/dashboard')
 
-  return {}
+  return { deleted: false }
 }

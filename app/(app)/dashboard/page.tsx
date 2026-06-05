@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   const recentRounds = recentRes.data ?? []
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl space-y-10">
+    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-10">
       <PageHeader
         title="Dashboard"
         description="Live overview of your venue"

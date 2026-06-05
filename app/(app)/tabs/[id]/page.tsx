@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { CloseTabButton } from '@/components/tabs/close-tab-button'
 import { OrderLogMenu, type OrderLogEntry } from '@/components/tabs/order-log-sheet'
+import { TabRealtime } from '@/components/tabs/tab-realtime'
 import type { OrderItemStatus } from '@/lib/database.types'
 
 const EVENT_VERB: Record<OrderItemStatus, string> = {
@@ -90,6 +91,23 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
     0
   )
 
+  // Consolidated bill: merge identical billable items across all rounds into one
+  // line each, for the receipt preview shown when closing the tab. Returned items
+  // carry no charge, so they're excluded.
+  const billLinesByName = new Map<string, { name: string; quantity: number; lineTotal: number }>()
+  for (const order of rounds) {
+    const items = (order.order_items as TabOrderItem[] | null) ?? []
+    for (const item of items) {
+      if (item.status === 'returned') continue
+      const name = item.menu_items?.name ?? 'Item'
+      const existing = billLinesByName.get(name) ?? { name, quantity: 0, lineTotal: 0 }
+      existing.quantity += item.quantity
+      existing.lineTotal += item.quantity * item.unit_price
+      billLinesByName.set(name, existing)
+    }
+  }
+  const billLines = [...billLinesByName.values()].sort((a, b) => a.name.localeCompare(b.name))
+
   // Flat, time-sorted timeline for the Order Log. Each item gets a synthetic
   // "Placed" origin (no status_event exists for creation), then its transitions.
   // The round short-id tags entries so identical items from different rounds stay
@@ -145,6 +163,8 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
         </div>
         <OrderLogMenu tabName={tab.name} entries={logEntries} />
       </div>
+
+      {tab.status === 'open' && <TabRealtime tabId={tab.id} />}
 
       {tab.status === 'open' && <NewOrderButton tabId={tab.id} tabName={tab.name} />}
 
@@ -219,7 +239,7 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
           {tab.status === 'open' && (
             <div className="flex justify-end">
               {isAdmin ? (
-                <CloseTabButton tabId={tab.id} tabName={tab.name} total={grandTotal} />
+                <CloseTabButton tabId={tab.id} tabName={tab.name} total={grandTotal} lines={billLines} />
               ) : (
                 <span className="text-xs text-muted-foreground">Admin closes the bill</span>
               )}

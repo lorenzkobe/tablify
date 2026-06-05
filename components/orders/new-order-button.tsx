@@ -42,7 +42,7 @@ export function NewOrderButton({
     if (!open) return
     const supabase = createClient()
     Promise.all([
-      supabase.from('menu_categories').select('*').order('sort'),
+      supabase.from('menu_categories').select('*').order('name'),
       supabase.from('menu_items').select('*').eq('available', true).order('sort'),
     ]).then(([cats, items]) => {
       setCategories(cats.data ?? [])
@@ -160,15 +160,17 @@ export function NewOrderButton({
                 />
               </div>
 
-              {/* Category filter chips — hidden while searching (search is global) */}
+              {/* Category filter chips — hidden while searching (search is global).
+                  Single horizontally-scrollable row on mobile to save vertical space;
+                  wraps freely from sm up. */}
               {!trimmedQuery && (
-                <div className="flex gap-1.5 flex-wrap">
+                <div className="flex gap-1.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible -mx-1 px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
                       className={[
-                        'px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[36px]',
+                        'px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[36px] shrink-0 whitespace-nowrap',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                         activeCategory === cat.id
                           ? 'bg-primary text-primary-foreground shadow-sm'

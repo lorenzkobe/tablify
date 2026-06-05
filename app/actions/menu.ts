@@ -79,7 +79,10 @@ export async function createMenuItem(data: {
     .select()
     .single()
 
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.code === '23505') return { error: `A menu item named “${data.name.trim()}” already exists.` }
+    return { error: error.message }
+  }
   revalidatePath('/menu')
   return { data: created }
 }
@@ -103,7 +106,10 @@ export async function updateMenuItem(id: string, data: {
     .select()
     .single()
 
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.code === '23505') return { error: `A menu item named “${data.name?.trim()}” already exists.` }
+    return { error: error.message }
+  }
   revalidatePath('/menu')
   return { data: updated }
 }
@@ -111,7 +117,16 @@ export async function updateMenuItem(id: string, data: {
 export async function deleteMenuItem(id: string) {
   const supabase = await createClient()
   const { error } = await supabase.from('menu_items').delete().eq('id', id)
-  if (error) return { error: error.message }
+  if (error) {
+    // FK violation: the item is referenced by existing order line items.
+    if (error.code === '23503') {
+      return {
+        error: 'This item appears in existing orders, so it can’t be deleted. Mark it unavailable instead to hide it from new orders.',
+        code: 'in_use' as const,
+      }
+    }
+    return { error: error.message }
+  }
   revalidatePath('/menu')
   return { data: { id } }
 }
