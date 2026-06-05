@@ -4,14 +4,15 @@ import Link from 'next/link'
 import { ChevronLeft, Clock } from 'lucide-react'
 import { formatClock } from '@/lib/format'
 import { OrgEditButton } from '@/components/superadmin/org-edit-button'
+import { OrgDeleteButton } from '@/components/superadmin/org-delete-button'
 import { OrgMemberManager } from '@/components/superadmin/org-member-manager'
 
 export default async function SuperadminOrganisationDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ slug: string }>
 }) {
-  const { id } = await params
+  const { slug } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -24,14 +25,18 @@ export default async function SuperadminOrganisationDetailPage({
 
   if (profile?.role !== 'superadmin') redirect('/dashboard')
 
-  const [orgRes, membersRes, orgsRes] = await Promise.all([
-    supabase.from('organisations').select('*').eq('id', id).single(),
-    supabase.from('profiles').select('*').eq('organisation_id', id).order('created_at'),
+  const { data: org } = await supabase
+    .from('organisations')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+
+  if (!org) notFound()
+
+  const [membersRes, orgsRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('organisation_id', org.id).order('created_at'),
     supabase.from('organisations').select('*').order('name'),
   ])
-
-  const org = orgRes.data
-  if (!org) notFound()
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6">
@@ -57,7 +62,10 @@ export default async function SuperadminOrganisationDetailPage({
               · {org.timezone} · {org.currency}
             </p>
           </div>
-          <OrgEditButton org={org} />
+          <div className="flex items-center gap-2 shrink-0">
+            <OrgEditButton org={org} />
+            <OrgDeleteButton org={org} memberCount={membersRes.data?.length ?? 0} />
+          </div>
         </div>
       </div>
 

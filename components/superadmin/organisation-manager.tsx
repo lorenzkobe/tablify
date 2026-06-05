@@ -41,7 +41,7 @@ export function OrganisationManager({ organisations }: { organisations: Organisa
             className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-muted/20 transition-colors"
           >
             <Link
-              href={`/superadmin/organisations/${org.id}`}
+              href={`/superadmin/organisations/${org.slug}`}
               className="flex items-center gap-3 min-w-0 flex-1"
             >
               <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -69,7 +69,7 @@ export function OrganisationManager({ organisations }: { organisations: Organisa
               <Pencil size={15} />
             </button>
             <Link
-              href={`/superadmin/organisations/${org.id}`}
+              href={`/superadmin/organisations/${org.slug}`}
               aria-label={`Open ${org.name}`}
               className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
             >

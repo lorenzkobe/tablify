@@ -111,6 +111,21 @@ export async function updateOrganisation(
   return {}
 }
 
+// Permanently delete an organisation. The FKs are configured so this cascade-
+// deletes all of the org's owned data, while its members are detached (their
+// organisation_id is set to NULL via ON DELETE SET NULL) rather than removed.
+export async function deleteOrganisation(id: string) {
+  const guard = await requireSuperadmin()
+  if ('error' in guard) return { error: guard.error }
+
+  const supabase = await createAdminClient()
+  const { error } = await supabase.from('organisations').delete().eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/superadmin/organisations')
+  return {}
+}
+
 export async function assignUserToOrg(userId: string, organisationId: string) {
   const guard = await requireSuperadmin()
   if ('error' in guard) return { error: guard.error }
@@ -123,7 +138,7 @@ export async function assignUserToOrg(userId: string, organisationId: string) {
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
-  revalidatePath('/superadmin/organisations/[id]', 'page')
+  revalidatePath('/superadmin/organisations/[slug]', 'page')
   return {}
 }
 
@@ -140,7 +155,7 @@ export async function removeUserFromOrg(userId: string) {
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
-  revalidatePath('/superadmin/organisations/[id]', 'page')
+  revalidatePath('/superadmin/organisations/[slug]', 'page')
   return {}
 }
 
@@ -163,7 +178,7 @@ export async function inviteUserToOrg(
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
-  revalidatePath('/superadmin/organisations/[id]', 'page')
+  revalidatePath('/superadmin/organisations/[slug]', 'page')
   return {}
 }
 
@@ -177,7 +192,7 @@ export async function setUserRole(userId: string, role: 'admin' | 'crew') {
 
   if (error) return { error: error.message }
   revalidatePath('/superadmin/users')
-  revalidatePath('/superadmin/organisations/[id]', 'page')
+  revalidatePath('/superadmin/organisations/[slug]', 'page')
   return {}
 }
 
@@ -238,6 +253,13 @@ export async function signInAsUser(userId: string) {
     return { error: verifyError.message }
   }
 
+  // Record the live impersonation — the authoritative state that gates the
+  // banner (the cookie only holds the restore tokens).
+  await admin.from('active_impersonations').upsert({
+    superadmin_id: superadmin.id,
+    target_user_id: userId,
+  })
+
   await admin.from('impersonation_events').insert({
     superadmin_id: superadmin.id,
     target_user_id: userId,
@@ -264,6 +286,11 @@ export async function stopImpersonating() {
   cookieStore.delete(IMPERSONATION_COOKIE)
 
   const admin = await createAdminClient()
+  await admin
+    .from('active_impersonations')
+    .delete()
+    .eq('superadmin_id', stash.superadmin_id)
+
   await admin.from('impersonation_events').insert({
     superadmin_id: stash.superadmin_id,
     target_user_id: stash.target_user_id,

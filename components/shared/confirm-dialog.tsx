@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { AlertTriangle } from 'lucide-react'
@@ -23,6 +23,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   tone = 'destructive',
   icon,
+  confirmDelaySeconds,
   onConfirm,
 }: {
   open: boolean
@@ -34,6 +35,7 @@ export function ConfirmDialog({
   cancelLabel?: string
   tone?: ConfirmTone
   icon?: ReactNode
+  confirmDelaySeconds?: number
   onConfirm: () => Promise<void> | void
 }) {
   const [loading, setLoading] = useState(false)
@@ -83,16 +85,67 @@ export function ConfirmDialog({
           >
             {cancelLabel}
           </Button>
-          <Button
+          <ConfirmButton
             variant={tone === 'warning' ? 'default' : 'destructive'}
             onClick={handleConfirm}
-            disabled={loading}
-            className="flex-1 min-h-[44px]"
-          >
-            {loading ? loadingLabel : confirmLabel}
-          </Button>
+            loading={loading}
+            label={confirmLabel}
+            loadingLabel={loadingLabel}
+            delaySeconds={confirmDelaySeconds}
+          />
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+/**
+ * Confirm button with an optional enforced delay before it becomes clickable.
+ * Lives in its own component so it remounts each time the dialog opens (Radix
+ * unmounts closed content), seeding the countdown from a state initialiser —
+ * no synchronous setState in an effect.
+ */
+function ConfirmButton({
+  variant,
+  onClick,
+  loading,
+  label,
+  loadingLabel,
+  delaySeconds,
+}: {
+  variant: 'default' | 'destructive'
+  onClick: () => void
+  loading: boolean
+  label: string
+  loadingLabel: string
+  delaySeconds?: number
+}) {
+  const [remaining, setRemaining] = useState(delaySeconds && delaySeconds > 0 ? delaySeconds : 0)
+
+  useEffect(() => {
+    if (remaining <= 0) return
+    const interval = setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+    // Runs once on mount; the interval drives every subsequent tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <Button
+      variant={variant}
+      onClick={onClick}
+      disabled={loading || remaining > 0}
+      className="flex-1 min-h-[44px]"
+    >
+      {loading ? loadingLabel : remaining > 0 ? `${label} (${remaining}s)` : label}
+    </Button>
   )
 }

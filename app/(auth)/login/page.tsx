@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +9,17 @@ import { Label } from '@/components/ui/label'
 import { TablifyMark } from '@/components/shared/logo'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const noOrg = searchParams.get('reason') === 'no-org'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -47,6 +57,12 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground">Sign in to your Tablify account</p>
           </div>
         </div>
+
+        {noOrg && (
+          <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            Your account isn&apos;t assigned to an organisation. Contact your administrator to regain access.
+          </p>
+        )}
 
         <form onSubmit={handleLogin} className="surface-raised space-y-4 rounded-xl border border-border bg-card p-6">
           <div className="space-y-2">

@@ -459,6 +459,39 @@ export type Database = {
           }
         ]
       }
+      active_impersonations: {
+        Row: {
+          superadmin_id: string
+          target_user_id: string
+          created_at: string
+        }
+        Insert: {
+          superadmin_id: string
+          target_user_id: string
+          created_at?: string
+        }
+        Update: {
+          superadmin_id?: string
+          target_user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'active_impersonations_superadmin_id_fkey'
+            columns: ['superadmin_id']
+            isOneToOne: true
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'active_impersonations_target_user_id_fkey'
+            columns: ['target_user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
