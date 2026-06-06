@@ -125,7 +125,7 @@ function ItemRow({
   const tone = ITEM_STATUS_TONE[item.status]
 
   return (
-    <div className="pl-5 pr-4 py-2.5">
+    <div className={`pl-5 pr-4 py-2.5 ${tone.tint}`}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
