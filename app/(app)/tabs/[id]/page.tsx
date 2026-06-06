@@ -8,6 +8,7 @@ import { NewOrderButton } from '@/components/orders/new-order-button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { CloseTabButton } from '@/components/tabs/close-tab-button'
+import { getOrganisation, DEFAULT_ORG } from '@/lib/organisation'
 import { OrderLogMenu, type OrderLogEntry } from '@/components/tabs/order-log-sheet'
 import { TabRealtime } from '@/components/tabs/tab-realtime'
 import type { OrderItemStatus } from '@/lib/database.types'
@@ -48,7 +49,10 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
   const supabase = await createClient()
 
   const me = await getCurrentProfile()
-  const isAdmin = me?.role === 'admin'
+  const canCloseTab = me?.role === 'admin' || me?.role === 'cashier'
+
+  // Times render in the venue's timezone, not the server runtime's (UTC on Vercel).
+  const { timezone } = (await getOrganisation()) ?? DEFAULT_ORG
 
   const { data: tab } = await supabase
     .from('tabs')
@@ -159,7 +163,7 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
             Opened by {(tab.profiles as { full_name: string } | null)?.full_name ?? 'Unknown'}
           </p>
         </div>
-        <OrderLogMenu tabName={tab.name} entries={logEntries} />
+        <OrderLogMenu tabName={tab.name} entries={logEntries} timezone={timezone} />
       </div>
 
       {tab.status === 'open' && <TabRealtime tabId={tab.id} />}
@@ -178,7 +182,7 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
                 <span className="text-xs text-muted-foreground tabular-nums">{formatCurrency(total)}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                {formatTime(order.created_at)} · by{' '}
+                {formatTime(order.created_at, timezone)} · by{' '}
                 {(order.profiles as { full_name: string } | null)?.full_name ?? 'Unknown'}
               </p>
             </CardHeader>
@@ -202,7 +206,7 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
                           {history
                             .map(
                               (ev) =>
-                                `${EVENT_VERB[ev.to_status]} by ${ev.profiles?.full_name ?? 'Unknown'} ${formatTime(ev.created_at)}`
+                                `${EVENT_VERB[ev.to_status]} by ${ev.profiles?.full_name ?? 'Unknown'} ${formatTime(ev.created_at, timezone)}`
                             )
                             .join(' · ')}
                         </p>
@@ -236,10 +240,10 @@ export default async function TabDetailPage({ params }: { params: Promise<{ id: 
           )}
           {tab.status === 'open' && (
             <div className="flex justify-end">
-              {isAdmin ? (
+              {canCloseTab ? (
                 <CloseTabButton tabId={tab.id} tabName={tab.name} total={grandTotal} lines={billLines} />
               ) : (
-                <span className="text-xs text-muted-foreground">Admin closes the bill</span>
+                <span className="text-xs text-muted-foreground">Only an admin or cashier can close the bill</span>
               )}
             </div>
           )}

@@ -15,7 +15,8 @@ export default async function QueuePage() {
         id,
         notes,
         created_at,
-        tabs(id, name)
+        tabs(id, name),
+        taker:profiles!orders_taken_by_fkey(full_name)
       )
     `)
     .in('status', QUEUE_STATUSES)

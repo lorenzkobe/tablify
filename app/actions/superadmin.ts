@@ -173,7 +173,7 @@ export async function removeUserFromOrg(userId: string) {
 export async function inviteUserToOrg(
   email: string,
   fullName: string,
-  role: 'admin' | 'crew',
+  role: 'admin' | 'crew' | 'cashier',
   organisationId: string,
 ) {
   const guard = await requireSuperadmin()
@@ -200,7 +200,7 @@ export async function inviteUserToOrg(
 }
 
 // Set a user's org-level role. Superadmin can never be assigned via the UI.
-export async function setUserRole(userId: string, role: 'admin' | 'crew') {
+export async function setUserRole(userId: string, role: 'admin' | 'crew' | 'cashier') {
   const guard = await requireSuperadmin()
   if ('error' in guard) return { error: guard.error }
 

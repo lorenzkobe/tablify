@@ -24,13 +24,14 @@ import { cn } from '@/lib/utils'
 const ROLE_LABELS: Record<Role, string> = {
   superadmin: 'Superadmin',
   admin: 'Admin',
+  cashier: 'Cashier',
   crew: 'Crew',
 }
 
 const NAV_ITEMS = [
-  { href: '/dashboard',                label: 'Dashboard',     icon: LayoutDashboard, roles: ['admin', 'crew'] as Role[] },
-  { href: '/tabs',                     label: 'Tabs',          icon: Scroll,          roles: ['admin', 'crew'] as Role[] },
-  { href: '/queue',                    label: 'Queue',         icon: UtensilsCrossed, roles: ['admin', 'crew'] as Role[] },
+  { href: '/dashboard',                label: 'Dashboard',     icon: LayoutDashboard, roles: ['admin', 'crew', 'cashier'] as Role[] },
+  { href: '/tabs',                     label: 'Tabs',          icon: Scroll,          roles: ['admin', 'crew', 'cashier'] as Role[] },
+  { href: '/queue',                    label: 'Queue',         icon: UtensilsCrossed, roles: ['admin', 'crew', 'cashier'] as Role[] },
   { href: '/menu',                     label: 'Menu',          icon: BookOpen,        roles: ['admin'] as Role[] },
   { href: '/admin/revenue',            label: 'Revenue',       icon: BarChart3,       roles: ['admin'] as Role[] },
   { href: '/admin/users',              label: 'Users',         icon: Users,           roles: ['admin'] as Role[] },

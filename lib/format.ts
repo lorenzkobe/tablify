@@ -19,8 +19,16 @@ export function formatCurrency(amount: number, currency = 'PHP'): string {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(amount)
 }
 
-export function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+// Render a UTC instant as wall-clock time. Pass the venue's IANA timezone so it
+// reads correctly in server components, which otherwise format in the runtime's
+// timezone (UTC on Vercel) rather than the venue's local time.
+export function formatTime(dateStr: string, timezone?: string): string {
+  return new Date(dateStr).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: timezone,
+  })
 }
 
 // Format a wall-clock "HH:MM" (or "HH:MM:SS") string as 12-hour time, e.g. "5:00 PM".

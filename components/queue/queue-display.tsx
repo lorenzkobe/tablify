@@ -13,7 +13,7 @@ import { formatTime } from '@/lib/format'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { toast } from 'sonner'
 import {
-  ChefHat, Clock, CheckCheck, Flame, AlertTriangle, Undo2,
+  ChefHat, Clock, CheckCheck, Flame, AlertTriangle, Undo2, User,
 } from 'lucide-react'
 import type { OrderItemStatus } from '@/lib/database.types'
 
@@ -30,11 +30,12 @@ interface QueueItem {
     notes: string | null
     created_at: string
     tabs: { id: string; name: string } | null
+    taker: { full_name: string } | null
   } | null
 }
 
 const QUEUE_SELECT =
-  '*, menu_items(name), orders(id, notes, created_at, tabs(id, name))'
+  '*, menu_items(name), orders(id, notes, created_at, tabs(id, name), taker:profiles!orders_taken_by_fkey(full_name))'
 
 // Bulk buttons render in flow order; the "serve" action gets primary emphasis.
 const BULK_STATUS_ORDER: OrderItemStatus[] = ['ready', 'in_progress', 'ordered']
@@ -86,6 +87,17 @@ function StatusPill({ items, isUrgent }: { items: QueueItem[]; isUrgent: boolean
     >
       {isUrgent && <AlertTriangle size={10} />}
       {isUrgent ? 'Overdue' : allReady ? 'Ready' : allOrdered ? 'Queued' : 'In Progress'}
+    </span>
+  )
+}
+
+// Who took this round. Some tabs are only understood by the crew member who
+// took them, so this lets another crew know who to ask for clarification.
+function TakerLabel({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground min-w-0">
+      <User size={11} className="shrink-0" />
+      <span className="truncate">Taken by {name}</span>
     </span>
   )
 }
@@ -192,6 +204,7 @@ function RoundSection({
 }) {
   const round = roundItems[0]?.orders
   const createdAt = round?.created_at ?? new Date().toISOString()
+  const taker = round?.taker?.full_name ?? null
   const ageMinutes = useAgeMinutes(createdAt)
   const isUrgent = ageMinutes >= 15
 
@@ -209,16 +222,25 @@ function RoundSection({
     <div>
       {showHeader && (
         <div className="pl-5 pr-4 py-2 bg-muted/30 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-            Round {index + 1}
-            <span className="ml-2 font-medium normal-case tracking-normal tabular-nums">
-              {formatTime(createdAt)}
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              Round {index + 1}
+              <span className="ml-2 font-medium normal-case tracking-normal tabular-nums">
+                {formatTime(createdAt)}
+              </span>
             </span>
-          </span>
-          <div className="flex items-center gap-2">
+            {taker && <TakerLabel name={taker} />}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             <TicketAgeIndicator createdAt={createdAt} />
             <StatusPill items={roundItems} isUrgent={isUrgent} />
           </div>
+        </div>
+      )}
+
+      {!showHeader && taker && (
+        <div className="pl-5 pr-4 pt-2.5 pb-0.5">
+          <TakerLabel name={taker} />
         </div>
       )}
 

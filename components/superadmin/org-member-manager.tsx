@@ -43,7 +43,7 @@ export function OrgMemberManager({
   const [inviteOpen, setInviteOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'admin' | 'crew'>('crew')
+  const [role, setRole] = useState<'admin' | 'crew' | 'cashier'>('crew')
   const [inviting, setInviting] = useState(false)
 
   const [addOpen, setAddOpen] = useState(false)
@@ -53,7 +53,7 @@ export function OrgMemberManager({
   const adminCount = members.filter((m) => m.role === 'admin').length
   const otherOrgs = organisations.filter((o) => o.id !== organisationId)
 
-  async function changeRole(userId: string, next: 'admin' | 'crew') {
+  async function changeRole(userId: string, next: 'admin' | 'crew' | 'cashier') {
     setBusyId(userId)
     const result = await setUserRole(userId, next)
     setBusyId(null)
@@ -184,7 +184,7 @@ export function OrgMemberManager({
                   <Select
                     value={u.role}
                     onValueChange={(val) => {
-                      if (val && val !== u.role) changeRole(u.id, val as 'admin' | 'crew')
+                      if (val && val !== u.role) changeRole(u.id, val as 'admin' | 'crew' | 'cashier')
                     }}
                     disabled={disabled}
                   >
@@ -194,6 +194,7 @@ export function OrgMemberManager({
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="crew">Crew</SelectItem>
+                      <SelectItem value="cashier">Cashier</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -285,13 +286,14 @@ export function OrgMemberManager({
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">Role</Label>
-              <Select value={role} onValueChange={(val) => setRole(val as 'admin' | 'crew')}>
+              <Select value={role} onValueChange={(val) => setRole(val as 'admin' | 'crew' | 'cashier')}>
                 <SelectTrigger className="h-10">
                   <span className="flex-1 text-left">{ROLE_CONFIG[role].label}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="crew">Crew</SelectItem>
+                  <SelectItem value="cashier">Cashier</SelectItem>
                 </SelectContent>
               </Select>
             </div>

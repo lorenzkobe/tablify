@@ -35,7 +35,15 @@ export interface OrderLogEntry {
   actor: string
 }
 
-export function OrderLogMenu({ tabName, entries }: { tabName: string; entries: OrderLogEntry[] }) {
+export function OrderLogMenu({
+  tabName,
+  entries,
+  timezone,
+}: {
+  tabName: string
+  entries: OrderLogEntry[]
+  timezone: string
+}) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -86,7 +94,7 @@ export function OrderLogMenu({ tabName, entries }: { tabName: string; entries: O
                         {entry.quantity}× {entry.itemName}
                       </span>
                       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                        {formatTime(entry.at)}
+                        {formatTime(entry.at, timezone)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">

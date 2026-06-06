@@ -1,5 +1,5 @@
 // Application-level type aliases
-export type Role = 'admin' | 'crew' | 'superadmin'
+export type Role = 'admin' | 'crew' | 'cashier' | 'superadmin'
 export type TabStatus = 'open' | 'closed'
 export type OrderItemStatus = 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
 
@@ -131,20 +131,20 @@ export type Database = {
         Row: {
           id: string
           full_name: string
-          role: 'admin' | 'crew' | 'superadmin'
+          role: 'admin' | 'crew' | 'cashier' | 'superadmin'
           organisation_id: string | null
           created_at: string
         }
         Insert: {
           id: string
           full_name: string
-          role?: 'admin' | 'crew' | 'superadmin' | null
+          role?: 'admin' | 'crew' | 'cashier' | 'superadmin' | null
           organisation_id?: string | null
         }
         Update: {
           id?: string
           full_name?: string
-          role?: 'admin' | 'crew' | 'superadmin' | null
+          role?: 'admin' | 'crew' | 'cashier' | 'superadmin' | null
           organisation_id?: string | null
         }
         Relationships: [
@@ -500,7 +500,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: 'admin' | 'crew' | 'superadmin'
+      user_role: 'admin' | 'crew' | 'cashier' | 'superadmin'
       tab_status: 'open' | 'closed'
       order_item_status: 'ordered' | 'in_progress' | 'ready' | 'served' | 'returned'
     }

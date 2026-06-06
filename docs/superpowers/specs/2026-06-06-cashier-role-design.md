@@ -85,6 +85,15 @@ Fallback text becomes "Only an admin or cashier can close the bill."
 - Add `<SelectItem value="cashier">Cashier</SelectItem>` to both the invite dropdown
   and the per-user role-change dropdown.
 
+### 7. Superadmin org-member management (consistency)
+
+The superadmin path assigns org roles too, via `inviteUserToOrg` / `setUserRole`
+(`app/actions/superadmin.ts`) and `components/superadmin/org-member-manager.tsx`.
+These were hardcoded to `'admin' | 'crew'`. Widened to `'admin' | 'crew' | 'cashier'`
+and a Cashier option added to both dropdowns, so a superadmin can also create/assign
+cashiers. (The actions just pass the role through; `ROLE_CONFIG` already rendered
+cashier members correctly.)
+
 ## Out of scope (YAGNI)
 
 No revenue/reporting changes, no separate cashier dashboard, no new audit-event

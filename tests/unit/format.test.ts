@@ -49,4 +49,12 @@ describe('formatTime', () => {
     const result = formatTime(ts)
     expect(result).toMatch(/\d{1,2}:\d{2}/)
   })
+
+  // Server components render in the runtime's timezone (UTC on Vercel), so an
+  // explicit venue timezone must override it regardless of where the code runs.
+  it('renders the instant in the given timezone, not the runtime default', () => {
+    const ts = '2026-06-04T14:30:00Z'
+    expect(formatTime(ts, 'Asia/Manila')).toBe('10:30 PM')
+    expect(formatTime(ts, 'UTC')).toBe('2:30 PM')
+  })
 })

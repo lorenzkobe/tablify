@@ -33,15 +33,15 @@ export async function closeTab(tabId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  // Closing a bill is a cash action — admins only.
+  // Closing a bill is a cash action — admins and cashiers only.
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
-    return { error: 'Only an admin can close a bill' }
+  if (profile?.role !== 'admin' && profile?.role !== 'cashier') {
+    return { error: 'Only an admin or cashier can close a bill' }
   }
 
   // Authoritative balance: sum of non-returned line items across the tab's rounds.

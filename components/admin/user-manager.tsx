@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { toast } from 'sonner'
-import { Plus, Trash2, ShieldCheck, Utensils, Users, Crown } from 'lucide-react'
+import { Plus, Trash2, ShieldCheck, Utensils, Users, Crown, Wallet } from 'lucide-react'
 import { Initials } from '@/components/shared/initials'
 import { cn } from '@/lib/utils'
 import type { Profile, Role } from '@/lib/database.types'
@@ -18,7 +18,8 @@ import type { Profile, Role } from '@/lib/database.types'
 export const ROLE_CONFIG: Record<Role, { label: string; description: string; color: string; avatarRing: string; icon: React.ReactNode }> = {
   superadmin: { label: 'Superadmin', description: 'Platform operator · manages organisations', color: 'text-primary bg-primary/10', avatarRing: 'ring-primary/30', icon: <Crown size={13} /> },
   admin: { label: 'Admin', description: 'Full access · handles cash & closes bills', color: 'text-primary bg-primary/10',       avatarRing: 'ring-primary/30',    icon: <ShieldCheck size={13} /> },
-  crew:  { label: 'Crew',  description: 'Take orders & work the queue',              color: 'text-indigo-500 bg-indigo-500/10', avatarRing: 'ring-indigo-500/30', icon: <Utensils size={13} /> },
+  crew:    { label: 'Crew',    description: 'Take orders & work the queue',         color: 'text-indigo-500 bg-indigo-500/10',   avatarRing: 'ring-indigo-500/30',   icon: <Utensils size={13} /> },
+  cashier: { label: 'Cashier', description: 'Take orders & settle bills',           color: 'text-emerald-500 bg-emerald-500/10', avatarRing: 'ring-emerald-500/30', icon: <Wallet size={13} /> },
 }
 
 export function UserManager({ users: initialUsers, currentUserId }: { users: Profile[]; currentUserId: string }) {
@@ -131,6 +132,7 @@ export function UserManager({ users: initialUsers, currentUserId }: { users: Pro
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="crew">Crew</SelectItem>
+                      <SelectItem value="cashier">Cashier</SelectItem>
                     </SelectContent>
                   </Select>
 
