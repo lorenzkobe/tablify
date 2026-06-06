@@ -125,16 +125,14 @@ function ItemRow({
   const tone = ITEM_STATUS_TONE[item.status]
 
   return (
-    <div className={`pl-5 pr-4 py-2.5 ${tone.tint}`}>
+    <div className="pl-5 pr-4 py-2.5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span
-              className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md border text-xs font-bold tabular-nums leading-none ${tone.badge}`}
-            >
+          <div className="flex items-baseline gap-2 min-w-0">
+            <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md bg-muted text-muted-foreground text-xs font-bold tabular-nums leading-none">
               {item.quantity}
             </span>
-            <p className="font-semibold text-base leading-tight truncate text-foreground">
+            <p className="min-w-0 flex-1 truncate font-semibold text-base leading-tight text-foreground">
               {item.menu_items?.name}
             </p>
             {isInProgress && <span className={`shrink-0 w-2 h-2 rounded-full ${tone.dot} animate-pulse`} />}
@@ -153,7 +151,7 @@ function ItemRow({
                   kind: 'advance',
                 })
               }
-              className="rounded-lg min-h-[44px] px-3 flex items-center justify-center gap-1.5 border border-border bg-background text-xs font-bold text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
+              className={`rounded-lg min-h-[44px] px-3 flex items-center justify-center gap-1.5 border text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] ${tone.badge}`}
             >
               {ITEM_ACTION_LABEL[item.status]}
             </button>
