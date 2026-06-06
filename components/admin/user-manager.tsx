@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { toast } from 'sonner'
-import { Plus, Trash2, ShieldCheck, Utensils, Users, Crown, Wallet } from 'lucide-react'
+import { Plus, Trash2, ShieldCheck, Utensils, Users, Crown, Wallet, Lock } from 'lucide-react'
 import { Initials } from '@/components/shared/initials'
 import { cn } from '@/lib/utils'
 import type { Profile, Role } from '@/lib/database.types'
@@ -92,6 +92,9 @@ export function UserManager({ users: initialUsers, currentUserId }: { users: Pro
         {users.map((user) => {
           const config = ROLE_CONFIG[user.role]
           const isCurrentUser = user.id === currentUserId
+          // Admins manage crew and cashiers, but not fellow admins (or themselves).
+          const isProtectedPeer = !isCurrentUser && user.role === 'admin'
+          const canManage = !isCurrentUser && !isProtectedPeer
           return (
             <div
               key={user.id}
@@ -116,8 +119,16 @@ export function UserManager({ users: initialUsers, currentUserId }: { users: Pro
                 </div>
               </div>
 
+              {/* Fellow admins are protected — no role change or removal */}
+              {isProtectedPeer && (
+                <div className="flex items-center gap-1.5 shrink-0 pl-[52px] sm:pl-0 text-xs text-muted-foreground">
+                  <Lock size={13} />
+                  Admin
+                </div>
+              )}
+
               {/* Controls */}
-              {!isCurrentUser && (
+              {canManage && (
                 <div className="flex items-center gap-2 shrink-0 pl-[52px] sm:pl-0">
                   <Select
                     value={user.role}

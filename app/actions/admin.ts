@@ -2,7 +2,29 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getCurrentProfile } from '@/lib/supabase/auth'
 import type { Role } from '@/lib/database.types'
+
+// Admins manage crew and cashiers, but cannot touch a fellow admin's account.
+// Returns an error string if the caller (an admin) is not allowed to act on the
+// target, otherwise null. Superadmins use the separate superadmin actions and
+// never reach here.
+async function guardAdminManagingPeer(targetUserId: string) {
+  const caller = await getCurrentProfile()
+  if (!caller) return 'Not authenticated'
+  if (caller.role !== 'admin') return 'Not authorised'
+  if (caller.id === targetUserId) return null
+
+  const admin = await createAdminClient()
+  const { data: target } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', targetUserId)
+    .single()
+
+  if (target?.role === 'admin') return 'You cannot manage another admin'
+  return null
+}
 
 export async function inviteUser(email: string, fullName: string, role: Role) {
   // The new staff member joins the inviting admin's organisation.
@@ -41,6 +63,9 @@ export async function inviteUser(email: string, fullName: string, role: Role) {
 }
 
 export async function updateUserRole(userId: string, role: Role) {
+  const denied = await guardAdminManagingPeer(userId)
+  if (denied) return { error: denied }
+
   const supabase = await createAdminClient()
 
   const { data, error } = await supabase
@@ -57,6 +82,9 @@ export async function updateUserRole(userId: string, role: Role) {
 }
 
 export async function deleteUser(userId: string) {
+  const denied = await guardAdminManagingPeer(userId)
+  if (denied) return { error: denied }
+
   const supabase = await createAdminClient()
 
   const { error } = await supabase.auth.admin.deleteUser(userId)

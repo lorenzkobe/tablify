@@ -11,6 +11,7 @@ import {
 } from '@/lib/order-status'
 import { formatTime } from '@/lib/format'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+import { ITEM_STATUS_TONE } from '@/components/shared/status-badge'
 import { toast } from 'sonner'
 import {
   ChefHat, Clock, CheckCheck, Flame, AlertTriangle, Undo2, User,
@@ -79,10 +80,10 @@ function StatusPill({ items, isUrgent }: { items: QueueItem[]; isUrgent: boolean
         isUrgent
           ? 'border-destructive/30 bg-destructive/10 text-destructive'
           : allReady
-          ? 'border-foreground/20 bg-foreground/5 text-foreground'
+          ? ITEM_STATUS_TONE.ready.badge
           : allOrdered
-          ? 'border-border bg-muted text-muted-foreground'
-          : 'border-primary/20 bg-primary/10 text-primary'
+          ? ITEM_STATUS_TONE.ordered.badge
+          : ITEM_STATUS_TONE.in_progress.badge
       }`}
     >
       {isUrgent && <AlertTriangle size={10} />}
@@ -121,7 +122,7 @@ function ItemRow({
   const nextStatus = NEXT_ITEM_STATUS[item.status]
   const prevStatus = PREV_ITEM_STATUS[item.status]
   const isInProgress = item.status === 'in_progress'
-  const isReady = item.status === 'ready'
+  const tone = ITEM_STATUS_TONE[item.status]
 
   return (
     <div className="pl-5 pr-4 py-2.5">
@@ -129,20 +130,14 @@ function ItemRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
             <span
-              className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold tabular-nums leading-none ${
-                isReady
-                  ? 'bg-foreground/10 text-foreground'
-                  : isInProgress
-                  ? 'bg-primary/15 text-primary'
-                  : 'bg-muted text-muted-foreground'
-              }`}
+              className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md border text-xs font-bold tabular-nums leading-none ${tone.badge}`}
             >
               {item.quantity}
             </span>
             <p className="font-semibold text-base leading-tight truncate text-foreground">
               {item.menu_items?.name}
             </p>
-            {isInProgress && <span className="shrink-0 w-2 h-2 rounded-full bg-primary animate-pulse" />}
+            {isInProgress && <span className={`shrink-0 w-2 h-2 rounded-full ${tone.dot} animate-pulse`} />}
           </div>
         </div>
 
