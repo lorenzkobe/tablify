@@ -14,8 +14,9 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { ITEM_STATUS_TONE } from '@/components/shared/status-badge'
 import { toast } from 'sonner'
 import {
-  ChefHat, Clock, CheckCheck, Flame, AlertTriangle, Undo2, User,
+  ChefHat, Clock, CheckCheck, Flame, AlertTriangle, Undo2, User, Play, Check,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { OrderItemStatus } from '@/lib/database.types'
 
 interface QueueItem {
@@ -40,6 +41,15 @@ const QUEUE_SELECT =
 
 // Bulk buttons render in flow order; the "serve" action gets primary emphasis.
 const BULK_STATUS_ORDER: OrderItemStatus[] = ['ready', 'in_progress', 'ordered']
+
+// Short verb for the per-item action button (kept narrow so long names stay
+// visible). The confirm dialog still uses the descriptive ITEM_ACTION_LABEL.
+const ITEM_ACTION_SHORT: Partial<Record<OrderItemStatus, string>> = {
+  ordered: 'Start', in_progress: 'Ready', ready: 'Serve',
+}
+const ACTION_ICON: Partial<Record<OrderItemStatus, LucideIcon>> = {
+  ordered: Play, in_progress: Check, ready: CheckCheck,
+}
 
 function getAgeMinutes(createdAt: string): number {
   return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000)
@@ -123,57 +133,56 @@ function ItemRow({
   const prevStatus = PREV_ITEM_STATUS[item.status]
   const isInProgress = item.status === 'in_progress'
   const tone = ITEM_STATUS_TONE[item.status]
+  const ActionIcon = ACTION_ICON[item.status]
 
   return (
-    <div className="pl-5 pr-4 py-2.5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 min-w-0">
-            <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md bg-muted text-muted-foreground text-xs font-bold tabular-nums leading-none">
-              {item.quantity}
-            </span>
-            <p className="min-w-0 flex-1 truncate font-semibold text-base leading-tight text-foreground">
-              {item.menu_items?.name}
-            </p>
-            {isInProgress && <span className={`shrink-0 w-2 h-2 rounded-full ${tone.dot} animate-pulse`} />}
-          </div>
-        </div>
+    <div className="relative pl-5 pr-4 py-2.5">
+      <span className={`absolute left-2 top-2.5 bottom-2.5 w-1 rounded-full ${tone.dot}`} aria-hidden />
+      <div className="flex items-start gap-2">
+        <span className={`shrink-0 inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1 rounded-md border text-xs font-bold tabular-nums leading-none ${tone.badge}`}>
+          {item.quantity}
+        </span>
+        <p className="flex-1 min-w-0 font-semibold text-base leading-snug text-foreground break-words">
+          {item.menu_items?.name}
+        </p>
+        {isInProgress && <span className={`shrink-0 mt-1.5 w-2 h-2 rounded-full ${tone.dot} animate-pulse`} />}
+      </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {nextStatus && (
-            <button
-              onClick={() =>
-                onRequest({
-                  itemIds: [item.id],
-                  toStatus: nextStatus,
-                  title: `${ITEM_ACTION_LABEL[item.status]} — ${item.quantity}× ${item.menu_items?.name ?? 'item'}?`,
-                  confirmLabel: ITEM_ACTION_LABEL[item.status] ?? 'Confirm',
-                  kind: 'advance',
-                })
-              }
-              className={`rounded-lg min-h-[44px] px-3 flex items-center justify-center gap-1.5 border text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] ${tone.badge}`}
-            >
-              {ITEM_ACTION_LABEL[item.status]}
-            </button>
-          )}
-          {prevStatus && (
-            <button
-              onClick={() =>
-                onRequest({
-                  itemIds: [item.id],
-                  toStatus: prevStatus,
-                  title: `Revert — ${item.quantity}× ${item.menu_items?.name ?? 'item'}?`,
-                  confirmLabel: 'Revert',
-                  kind: 'revert',
-                })
-              }
-              aria-label="Revert status"
-              className="rounded-lg min-h-[44px] min-w-[44px] px-3 flex items-center justify-center border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Undo2 size={15} />
-            </button>
-          )}
-        </div>
+      <div className="mt-2 flex items-center justify-end gap-1.5">
+        {prevStatus && (
+          <button
+            onClick={() =>
+              onRequest({
+                itemIds: [item.id],
+                toStatus: prevStatus,
+                title: `Revert — ${item.quantity}× ${item.menu_items?.name ?? 'item'}?`,
+                confirmLabel: 'Revert',
+                kind: 'revert',
+              })
+            }
+            aria-label="Revert status"
+            className="rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Undo2 size={15} />
+          </button>
+        )}
+        {nextStatus && (
+          <button
+            onClick={() =>
+              onRequest({
+                itemIds: [item.id],
+                toStatus: nextStatus,
+                title: `${ITEM_ACTION_LABEL[item.status]} — ${item.quantity}× ${item.menu_items?.name ?? 'item'}?`,
+                confirmLabel: ITEM_ACTION_LABEL[item.status] ?? 'Confirm',
+                kind: 'advance',
+              })
+            }
+            className={`rounded-lg min-h-[44px] px-4 flex items-center justify-center gap-1.5 border text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] ${tone.badge}`}
+          >
+            {ActionIcon && <ActionIcon size={14} className="shrink-0" />}
+            {ITEM_ACTION_SHORT[item.status]}
+          </button>
+        )}
       </div>
       {item.notes && (
         <p className="text-xs text-muted-foreground mt-1 pl-8 leading-snug">{item.notes}</p>
